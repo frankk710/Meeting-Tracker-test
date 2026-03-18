@@ -68,7 +68,7 @@
                     <div class="flex items-center gap-2 md:col-span-2">
                         <input type="datetime-local" id="meeting_time" required class="border p-3 rounded-xl bg-gray-50 w-full" title="开始时间">
                         <span class="text-gray-400">至</span>
-                        <input type="datetime-local" id="meeting_end_time" required class="border p-3 rounded-xl bg-gray-50 w-full" title="预计结束时间">
+                        <input type="datetime-local" id="meeting_end_time" class="border p-3 rounded-xl bg-gray-50 w-full" title="预计结束时间(可选)">
                     </div>
 
                     <select id="location" required class="border p-3 rounded-xl bg-gray-50 outline-none">
@@ -174,17 +174,20 @@
                 const isFutureOrToday = meetingDate >= today;
                 const rowHighlightClass = isFutureOrToday ? 'bg-pink-50 border-l-4 border-l-pink-400' : 'opacity-60 bg-white';
                 const titleTextColor = isFutureOrToday ? 'text-black font-bold' : 'text-gray-800';
+                
+                let timeDisplay = `<div class="text-blue-600 font-medium">始: ${m.meeting_time.replace('T', ' ')}</div>`;
+                if (m.meeting_end_time) {
+                    timeDisplay += `<div class="text-red-500 font-medium">终: ${m.meeting_end_time.replace('T', ' ')}</div>`;
+                }
+
                 let statusColor = m.status.includes('镇街') ? 'text-red-600 font-bold' : (m.status.includes('区市') ? 'text-blue-600 font-bold' : 'text-gray-500');
                 let typeStyle = typeColorMap[m.meeting_type] || 'bg-gray-100 text-gray-700 border-gray-200';
                 
-                // 显示起止时间
-                const timeStr = `${m.meeting_time.replace('T', ' ')} 至 ${m.meeting_end_time ? m.meeting_end_time.split('T')[1] : '结束'}`;
-
                 tbody.innerHTML += `
                     <tr class="hover:bg-pink-100/50 transition-colors ${rowHighlightClass}">
                         <td class="text-center text-gray-400 font-mono text-sm nowrap-column">${index + 1}</td>
                         <td class="text-center text-sm nowrap-column ${titleTextColor}">${m.title}</td>
-                        <td class="text-center whitespace-nowrap text-gray-500 text-sm">${m.meeting_time.replace('T', ' ')}<br><small>至 ${m.meeting_end_time ? m.meeting_end_time.replace('T', ' ') : '-'}</small></td>
+                        <td class="text-left whitespace-nowrap text-sm px-4">${timeDisplay}</td>
                         <td class="text-center text-gray-600 text-sm nowrap-column">${m.location}</td>
                         <td class="text-center nowrap-column">
                             <span class="px-3 py-1 rounded-full text-xs font-bold border ${typeStyle}">${m.meeting_type}</span>
@@ -208,38 +211,28 @@
             ).join('');
         }
 
-        function exportToExcel() {
-            const table = document.getElementById('meetingTableMain');
-            const noExportItems = document.querySelectorAll('.no-export');
-            noExportItems.forEach(el => el.style.display = 'none');
-            const dateStr = new Date().toISOString().slice(0, 10);
-            const wb = XLSX.utils.table_to_book(table, { sheet: "每周会议保障" });
-            noExportItems.forEach(el => el.style.display = '');
-            XLSX.writeFile(wb, `会议保障排期表_${dateStr}.xlsx`);
-        }
-
-        // --- 核心：冲突检测函数 ---
-        function checkMeetingConflict(newData) {
+        // --- 核心逻辑：会议冲突检测 ---
+        function checkConflict(newData) {
             const newStart = new Date(newData.meeting_time).getTime();
-            const newEnd = new Date(newData.meeting_end_time).getTime();
+            // 如果没填结束时间，默认给1分钟时长用于冲突计算
+            const newEnd = newData.meeting_end_time ? new Date(newData.meeting_end_time).getTime() : newStart + 60000;
 
-            if (newEnd <= newStart) {
-                alert("错误：结束时间不能早于或等于开始时间！");
+            if (newData.meeting_end_time && newEnd <= newStart) {
+                alert("❌ 错误：结束时间必须晚于开始时间");
                 return true;
             }
 
-            // 过滤掉当前正在编辑的会议本身，只对比其他会议
-            const otherMeetings = meetingDataList.filter(m => m.id !== newData.id);
+            for (const exist of meetingDataList) {
+                // 修改时排除自身
+                if (newData.id && exist.id === newData.id) continue;
 
-            for (const existing of otherMeetings) {
-                // 只有在同一地点时才需要检查冲突
-                if (existing.location === newData.location) {
-                    const existStart = new Date(existing.meeting_time).getTime();
-                    const existEnd = new Date(existing.meeting_end_time || existing.meeting_time).getTime();
+                if (exist.location === newData.location) {
+                    const existStart = new Date(exist.meeting_time).getTime();
+                    const existEnd = exist.meeting_end_time ? new Date(exist.meeting_end_time).getTime() : existStart + 60000;
 
-                    // 时间重叠判定逻辑：(新开始 < 已结束) 且 (新结束 > 已开始)
+                    // 判定重叠：(新开始 < 已结束) 且 (新结束 > 已开始)
                     if (newStart < existEnd && newEnd > existStart) {
-                        alert(`⚠️ 会议冲突提示！\n\n地点：${newData.location}\n该时段已有会议：\n「${existing.title}」\n时间：${existing.meeting_time.replace('T',' ')} 至 ${existing.meeting_end_time ? existing.meeting_end_time.split('T')[1] : '结束'}\n\n请修改时间或更换会场。`);
+                        alert(`⚠️ 会议冲突！\n\n地点：${newData.location}\n该时段已有会议：\n「${exist.title}」\n起止：${exist.meeting_time.replace('T',' ')} 至 ${exist.meeting_end_time ? exist.meeting_end_time.split('T')[1] : '结束'}\n\n请更换会场或调整时间。`);
                         return true;
                     }
                 }
@@ -263,8 +256,7 @@
                 notes: document.getElementById('notes').value
             };
 
-            // 提交前执行冲突检测
-            if (checkMeetingConflict(data)) return;
+            if (checkConflict(data)) return;
 
             await fetch('/api/meetings', {
                 method: editId ? 'PUT' : 'POST',
@@ -304,6 +296,16 @@
             document.getElementById('addMeetingForm').reset();
             document.getElementById('edit_id').value = '';
             document.getElementById('formTitle').innerText = '➕ 新增会议任务';
+        }
+
+        function exportToExcel() {
+            const table = document.getElementById('meetingTableMain');
+            const noExportItems = document.querySelectorAll('.no-export');
+            noExportItems.forEach(el => el.style.display = 'none');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            const wb = XLSX.utils.table_to_book(table, { sheet: "每周会议保障" });
+            noExportItems.forEach(el => el.style.display = '');
+            XLSX.writeFile(wb, `会议保障排期表_${dateStr}.xlsx`);
         }
     </script>
 </body>
