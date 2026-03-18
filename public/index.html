@@ -63,7 +63,7 @@
             <div class="relative mb-8 min-h-[80px] flex items-center justify-center">
                 <div class="text-center">
                     <h1 class="text-3xl font-black text-[#b367b5]">📊 每周会议保障排期表</h1>
-                    <p class="text-gray-400 text-sm mt-1">自主填报系统 | 自动检测会议室占用冲突</p>
+                    <p class="text-gray-400 text-sm mt-1">自主填报系统 | 冲突检测已开启</p>
                 </div>
                 <div class="absolute right-0 bottom-0 flex gap-3">
                     <button onclick="exportToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl font-bold shadow-md transition-all flex items-center gap-2">
@@ -77,10 +77,18 @@
                 <h2 class="text-xl font-bold mb-4 text-gray-700" id="formTitle">➕ 新增会议任务</h2>
                 <form id="addMeetingForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <input type="hidden" id="edit_id" value="">
+                    
                     <input type="text" id="title" placeholder="会议名称" required class="border p-3 rounded-xl md:col-span-2 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-200">
-                    <div class="flex gap-2 md:col-span-2">
-                        <input type="datetime-local" id="meeting_time" required class="border p-3 rounded-xl bg-gray-50 flex-1" title="开始时间">
-                        <input type="datetime-local" id="meeting_end_time" required class="border p-3 rounded-xl bg-gray-50 flex-1" title="结束时间">
+                    
+                    <div class="flex flex-col md:flex-row gap-2 md:col-span-2">
+                        <div class="flex-1 flex items-center gap-2 bg-gray-50 border rounded-xl px-3">
+                            <span class="text-xs text-gray-400 whitespace-nowrap">始</span>
+                            <input type="datetime-local" id="meeting_time" required class="bg-transparent py-3 w-full outline-none text-sm">
+                        </div>
+                        <div class="flex-1 flex items-center gap-2 bg-gray-50 border rounded-xl px-3">
+                            <span class="text-xs text-gray-400 whitespace-nowrap">终</span>
+                            <input type="datetime-local" id="meeting_end_time" class="bg-transparent py-3 w-full outline-none text-sm">
+                        </div>
                     </div>
                     
                     <select id="location" required class="border p-3 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-200">
@@ -100,15 +108,18 @@
                     </select>
 
                     <input type="text" id="department" placeholder="填报科室" required class="border p-3 rounded-xl bg-gray-50">
+                    
                     <select id="status" class="border p-3 rounded-xl bg-gray-50">
                         <option value="市级">市级</option>
                         <option value="区市参加">区市参加</option>
                         <option value="区市、镇街参加">区市、镇街参加</option>
                     </select>
-                    <input type="text" id="leader" placeholder="参会领导" class="border p-3 rounded-xl bg-gray-50">
+
+                    <input type="text" id="leader" placeholder="参会领导" class="border p-3 rounded-xl md:col-span-1 bg-gray-50">
                     <input type="text" id="notes" placeholder="保障要求与备注" class="border p-3 rounded-xl md:col-span-3 bg-gray-50 outline-none">
+                    
                     <div class="md:col-span-4 mt-2">
-                        <button type="submit" id="submitBtn" class="w-full bg-blue-500 text-white p-4 rounded-xl font-black text-lg shadow-lg hover:bg-blue-600">保存会议并锁定会议室</button>
+                        <button type="submit" id="submitBtn" class="w-full bg-blue-500 text-white p-4 rounded-xl font-black text-lg shadow-lg hover:bg-blue-600 transition-all">保存会议并锁定会议室</button>
                     </div>
                 </form>
             </div>
@@ -120,8 +131,7 @@
                             <tr>
                                 <th class="text-center nowrap-column">序号</th>
                                 <th class="text-center nowrap-column">会议名称</th>
-                                <th class="text-center nowrap-column">开始时间</th>
-                                <th class="text-center nowrap-column">结束时间</th>
+                                <th class="text-center">时间段 (起-止)</th>
                                 <th class="text-center nowrap-column">地点</th>
                                 <th class="text-center nowrap-column">类型</th>
                                 <th class="text-center nowrap-column">填报科室</th>
@@ -168,20 +178,25 @@
             } catch (e) { console.error(e); }
         }
 
-        // 冲突检测函数
+        // 核心：时间冲突检测逻辑
         function checkConflict(data) {
-            const start = new Date(data.meeting_time).getTime();
-            const end = new Date(data.meeting_end_time).getTime();
+            const startTs = new Date(data.meeting_time).getTime();
+            // 如果没填结束时间，默认加 2 小时
+            const endTs = data.meeting_end_time 
+                ? new Date(data.meeting_end_time).getTime() 
+                : startTs + (2 * 60 * 60 * 1000);
             
-            if (end <= start) { alert("结束时间不能早于开始时间"); return true; }
+            if (endTs <= startTs) { alert("⛔ 结束时间必须晚于开始时间"); return true; }
 
             for (let m of meetingDataList) {
                 if (data.id && m.id === data.id) continue;
                 if (m.location === data.location) {
                     const mStart = new Date(m.meeting_time).getTime();
                     const mEnd = new Date(m.meeting_end_time || (mStart + 7200000)).getTime();
-                    if (start < mEnd && end > mStart) {
-                        alert(`🚫 冲突：${m.location}在该时段已被“${m.department}”占用！`);
+                    
+                    // 时间交叉判定算法
+                    if (startTs < mEnd && endTs > mStart) {
+                        alert(`🚫 占用冲突！\n【${m.location}】在该时段已被“${m.department}”预约。\n已预约时段：${m.meeting_time.split('T')[1]} 至 ${(m.meeting_end_time||'').split('T')[1]}`);
                         return true;
                     }
                 }
@@ -197,8 +212,6 @@
             meetingDataList.forEach((m, index) => {
                 const mStart = new Date(m.meeting_time);
                 const isFuture = mStart >= today;
-
-                // 紫色高亮逻辑
                 const rowClass = isFuture ? 'bg-[#b367b5]/10 border-l-4 border-l-[#b367b5]' : 'opacity-60 bg-white';
                 const titleClass = isFuture ? 'text-black font-bold' : 'text-gray-800';
 
@@ -206,8 +219,9 @@
                     <tr class="hover:bg-[#b367b5]/20 transition-colors ${rowClass}">
                         <td class="text-center text-gray-400 font-mono text-sm">${index + 1}</td>
                         <td class="text-center text-sm ${titleClass}">${m.title}</td>
-                        <td class="text-center text-xs text-gray-500">${m.meeting_time.replace('T',' ')}</td>
-                        <td class="text-center text-xs text-gray-500">${(m.meeting_end_time || '').replace('T',' ')}</td>
+                        <td class="text-center text-xs text-gray-500 leading-tight">
+                            ${m.meeting_time.replace('T',' ')}<br>至<br>${(m.meeting_end_time || '未设置').replace('T',' ')}
+                        </td>
                         <td class="text-center text-sm text-gray-600">${m.location}</td>
                         <td class="text-center"><span class="px-2 py-0.5 rounded-full text-xs border border-gray-200 bg-gray-50">${m.meeting_type}</span></td>
                         <td class="text-center text-sm">${m.department || '-'}</td>
@@ -255,12 +269,12 @@
         });
 
         async function deleteMeeting(id) {
-            const pwd = prompt("删除确认密码："); if (!pwd) return;
+            const pwd = prompt("请输入管理员密码确认删除："); if (!pwd) return;
             const res = await fetch(`/api/meetings?id=${id}`, {
                 method: 'DELETE',
                 headers: { 'X-Admin-Password': pwd, 'X-Web-Password': authToken }
             });
-            if (res.ok) loadMeetings(); else alert("认证失败");
+            if (res.ok) loadMeetings(); else alert("删除失败：密码不正确");
         }
 
         function editMeeting(id) {
