@@ -9,7 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* 核心布局保持不变 */
         .table-container {
             border: 1px solid #e5e7eb;
             border-radius: 12px;
@@ -95,11 +94,11 @@
                     <input type="text" id="title" placeholder="会议名称" required class="border p-3 rounded-xl md:col-span-2 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-200">
                     
                     <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-gray-400 ml-2">开始时间</label>
+                        <label class="text-[10px] text-gray-400 ml-2 font-bold">开始时间</label>
                         <input type="datetime-local" id="meeting_time" required class="border p-3 rounded-xl bg-gray-50 text-sm">
                     </div>
                     <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-gray-400 ml-2">结束时间</label>
+                        <label class="text-[10px] text-gray-400 ml-2 font-bold">结束时间</label>
                         <input type="datetime-local" id="meeting_end_time" required class="border p-3 rounded-xl bg-gray-50 text-sm">
                     </div>
                     
@@ -140,7 +139,7 @@
                             <tr>
                                 <th class="text-center nowrap-column">序号</th>
                                 <th class="text-center nowrap-column">会议名称</th>
-                                <th class="text-center nowrap-column">时间</th>
+                                <th class="text-center nowrap-column">时间（起/止）</th>
                                 <th class="text-center nowrap-column">地点</th>
                                 <th class="text-center nowrap-column">类型</th>
                                 <th class="text-center nowrap-column">主办科室</th>
@@ -190,7 +189,6 @@
         function renderTable() {
             const tbody = document.getElementById('meetingList');
             tbody.innerHTML = '';
-            
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
@@ -205,27 +203,28 @@
             meetingDataList.forEach((m, index) => {
                 const meetingDate = new Date(m.meeting_time);
                 const isFutureOrToday = meetingDate >= today;
-
-                const rowHighlightClass = isFutureOrToday 
-                    ? 'bg-pink-50 border-l-4 border-l-pink-400' 
-                    : 'opacity-60 bg-white';
-                
+                const rowHighlightClass = isFutureOrToday ? 'bg-pink-50 border-l-4 border-l-pink-400' : 'opacity-60 bg-white';
                 const titleTextColor = isFutureOrToday ? 'text-black font-bold' : 'text-gray-800';
-
                 let statusColor = m.status.includes('镇街') ? 'text-red-600 font-bold' : (m.status.includes('区市') ? 'text-blue-600 font-bold' : 'text-gray-500');
                 let typeStyle = typeColorMap[m.meeting_type] || 'bg-gray-100 text-gray-700 border-gray-200';
                 
-                // 渲染：时间显示逻辑（起止时间分行显示）
-                const startTime = m.meeting_time ? m.meeting_time.replace('T', ' ') : '-';
-                const endTime = m.meeting_end_time ? m.meeting_end_time.split('T')[1] : '--:--';
+                // 优化后的时间显示：起止时间格式完全一致
+                const startTimeStr = m.meeting_time ? m.meeting_time.replace('T', ' ') : '-';
+                const endTimeStr = m.meeting_end_time ? m.meeting_end_time.replace('T', ' ') : '-';
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-pink-100/50 transition-colors ${rowHighlightClass}">
                         <td class="text-center text-gray-400 font-mono text-sm nowrap-column">${index + 1}</td>
                         <td class="text-center text-sm nowrap-column ${titleTextColor}">${m.title}</td>
-                        <td class="text-center whitespace-nowrap text-gray-500 text-xs">
-                            <div class="font-bold text-gray-700">${startTime}</div>
-                            <div class="text-gray-400 mt-1">至 ${endTime}</div>
+                        <td class="text-center whitespace-nowrap text-sm">
+                            <div class="flex flex-col gap-1 px-2">
+                                <div class="font-bold text-blue-600 flex items-center justify-center gap-1">
+                                    <span class="text-[10px] bg-blue-50 px-1 rounded">始</span>${startTimeStr}
+                                </div>
+                                <div class="font-bold text-red-600 flex items-center justify-center gap-1">
+                                    <span class="text-[10px] bg-red-50 px-1 rounded">终</span>${endTimeStr}
+                                </div>
+                            </div>
                         </td>
                         <td class="text-center text-gray-600 text-sm nowrap-column">${m.location}</td>
                         <td class="text-center nowrap-column">
@@ -267,7 +266,7 @@
                 id: editId ? Number(editId) : undefined,
                 title: document.getElementById('title').value,
                 meeting_time: document.getElementById('meeting_time').value,
-                meeting_end_time: document.getElementById('meeting_end_time').value, // 增加
+                meeting_end_time: document.getElementById('meeting_end_time').value,
                 location: document.getElementById('location').value,
                 meeting_type: document.getElementById('meeting_type').value,
                 department: document.getElementById('department').value,
@@ -298,7 +297,7 @@
             document.getElementById('edit_id').value = m.id;
             document.getElementById('title').value = m.title;
             document.getElementById('meeting_time').value = m.meeting_time;
-            document.getElementById('meeting_end_time').value = m.meeting_end_time || ''; // 增加
+            document.getElementById('meeting_end_time').value = m.meeting_end_time || '';
             document.getElementById('location').value = m.location;
             document.getElementById('meeting_type').value = m.meeting_type;
             document.getElementById('department').value = m.department;
