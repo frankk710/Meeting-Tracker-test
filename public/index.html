@@ -211,7 +211,7 @@
                 // 时间列处理：显示起止时间
                 const timeDisplay = `
                     <div class="text-xs text-blue-600 font-bold">${m.meeting_time.replace('T', ' ')}</div>
-                    <div class="text-[10px] text-gray-400">至 ${m.meeting_end_time ? m.meeting_end_time.replace('T', ' ') : '-'}</div>
+                    <div class="text-[10px] text-gray-400">${m.meeting_end_time ? m.meeting_end_time.replace('T', ' ') : '-'}</div>
                 `;
 
                 tbody.innerHTML += `
