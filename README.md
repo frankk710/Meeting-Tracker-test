@@ -47,6 +47,7 @@
 1.  在 Cloudflare Pages 项目设置中，进入 **Settings** -> **Environment variables**。
 2.  添加一个变量 `ADMIN_PASSWORD`。
 3.  设置一个你自定义的删除权限密码（例如：`666888`）。
+4.  添加变量 `WEB_PASSWORD`（用于访问系统时的身份验证）。
 
 ### 4. 部署前端
 1.  将最终版的 `index.html` 放入仓库的 `public` 文件夹下。
