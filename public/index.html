@@ -9,43 +9,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* 核心布局保持不变 */
-        .table-container {
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            background: white;
-        }
+        .table-container { border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); background: white; }
         table { border-collapse: collapse; width: 100%; table-layout: auto; }
-        thead th {
-            background-color: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
-            border-right: 1px solid #f3f4f6;
-            color: #374151;
-            font-weight: 700;
-            padding: 16px 12px !important;
-            font-size: 0.95rem;
-            vertical-align: middle;
-        }
-        tbody td {
-            border-bottom: 1px solid #f3f4f6;
-            border-right: 1px solid #f3f4f6;
-            padding: 14px 12px !important;
-            vertical-align: middle;
-            color: #4b5563;
-        }
+        thead th { background-color: #f9fafb; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #f3f4f6; color: #374151; font-weight: 700; padding: 16px 12px !important; font-size: 0.95rem; vertical-align: middle; }
+        tbody td { border-bottom: 1px solid #f3f4f6; border-right: 1px solid #f3f4f6; padding: 14px 12px !important; vertical-align: middle; color: #4b5563; }
         tbody tr:last-child td { border-bottom: none; }
         th:last-child, td:last-child { border-right: none; }
-
         .nowrap-column { white-space: nowrap !important; width: 1%; }
-        .notes-column {
-            min-width: 150px;
-            word-break: break-all;
-            white-space: normal !important;
-            text-align: left !important;
-        }
-
+        .notes-column { min-width: 150px; word-break: break-all; white-space: normal !important; text-align: left !important; }
         #mainContent { display: none; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #bae6fd; border-radius: 3px; }
@@ -93,9 +64,13 @@
                 <form id="addMeetingForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <input type="hidden" id="edit_id" value="">
                     <input type="text" id="title" placeholder="会议名称" required class="border p-3 rounded-xl md:col-span-2 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-200">
-                    <input type="datetime-local" id="meeting_time" title="开始时间" required class="border p-3 rounded-xl bg-gray-50">
-                    <input type="datetime-local" id="meeting_end_time" title="结束时间" class="border p-3 rounded-xl bg-gray-50">
                     
+                    <div class="flex items-center gap-2 md:col-span-2">
+                        <input type="datetime-local" id="meeting_time" required class="border p-3 rounded-xl bg-gray-50 w-full" title="开始时间">
+                        <span class="text-gray-400">至</span>
+                        <input type="datetime-local" id="meeting_end_time" required class="border p-3 rounded-xl bg-gray-50 w-full" title="预计结束时间">
+                    </div>
+
                     <select id="location" required class="border p-3 rounded-xl bg-gray-50 outline-none">
                         <option value="" disabled selected>选择会议地点</option>
                         <option value="会商室">会商室</option>
@@ -119,7 +94,7 @@
                         <option value="区市、镇街参加">区市、镇街参加</option>
                     </select>
                     <input type="text" id="leader" placeholder="参会领导" class="border p-3 rounded-xl bg-gray-50">
-                    <input type="text" id="notes" placeholder="保障要求与备注" class="border p-3 rounded-xl md:col-span-3 bg-gray-50 outline-none">
+                    <input type="text" id="notes" placeholder="保障要求与备注" class="border p-3 rounded-xl md:col-span-4 bg-gray-50 outline-none">
                     <div class="md:col-span-4 mt-2">
                         <button type="submit" id="submitBtn" class="w-full bg-blue-500 text-white p-4 rounded-xl font-black text-lg shadow-lg hover:bg-blue-600 transition-colors">保存会议排期</button>
                     </div>
@@ -183,7 +158,6 @@
         function renderTable() {
             const tbody = document.getElementById('meetingList');
             tbody.innerHTML = '';
-            
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
@@ -198,27 +172,19 @@
             meetingDataList.forEach((m, index) => {
                 const meetingDate = new Date(m.meeting_time);
                 const isFutureOrToday = meetingDate >= today;
-
-                const rowHighlightClass = isFutureOrToday 
-                    ? 'bg-pink-50 border-l-4 border-l-pink-400' 
-                    : 'opacity-60 bg-white';
-                
+                const rowHighlightClass = isFutureOrToday ? 'bg-pink-50 border-l-4 border-l-pink-400' : 'opacity-60 bg-white';
                 const titleTextColor = isFutureOrToday ? 'text-black font-bold' : 'text-gray-800';
-
                 let statusColor = m.status.includes('镇街') ? 'text-red-600 font-bold' : (m.status.includes('区市') ? 'text-blue-600 font-bold' : 'text-gray-500');
                 let typeStyle = typeColorMap[m.meeting_type] || 'bg-gray-100 text-gray-700 border-gray-200';
                 
-                // 时间列处理：显示起止时间
-                const timeDisplay = `
-                    <div class="text-xs text-blue-600 font-bold">${m.meeting_time.replace('T', ' ')}</div>
-                    <div class="text-[10px] text-gray-400">${m.meeting_end_time ? m.meeting_end_time.replace('T', ' ') : '-'}</div>
-                `;
+                // 显示起止时间
+                const timeStr = `${m.meeting_time.replace('T', ' ')} 至 ${m.meeting_end_time ? m.meeting_end_time.split('T')[1] : '结束'}`;
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-pink-100/50 transition-colors ${rowHighlightClass}">
                         <td class="text-center text-gray-400 font-mono text-sm nowrap-column">${index + 1}</td>
                         <td class="text-center text-sm nowrap-column ${titleTextColor}">${m.title}</td>
-                        <td class="text-center whitespace-nowrap text-sm">${timeDisplay}</td>
+                        <td class="text-center whitespace-nowrap text-gray-500 text-sm">${m.meeting_time.replace('T', ' ')}<br><small>至 ${m.meeting_end_time ? m.meeting_end_time.replace('T', ' ') : '-'}</small></td>
                         <td class="text-center text-gray-600 text-sm nowrap-column">${m.location}</td>
                         <td class="text-center nowrap-column">
                             <span class="px-3 py-1 rounded-full text-xs font-bold border ${typeStyle}">${m.meeting_type}</span>
@@ -252,6 +218,35 @@
             XLSX.writeFile(wb, `会议保障排期表_${dateStr}.xlsx`);
         }
 
+        // --- 核心：冲突检测函数 ---
+        function checkMeetingConflict(newData) {
+            const newStart = new Date(newData.meeting_time).getTime();
+            const newEnd = new Date(newData.meeting_end_time).getTime();
+
+            if (newEnd <= newStart) {
+                alert("错误：结束时间不能早于或等于开始时间！");
+                return true;
+            }
+
+            // 过滤掉当前正在编辑的会议本身，只对比其他会议
+            const otherMeetings = meetingDataList.filter(m => m.id !== newData.id);
+
+            for (const existing of otherMeetings) {
+                // 只有在同一地点时才需要检查冲突
+                if (existing.location === newData.location) {
+                    const existStart = new Date(existing.meeting_time).getTime();
+                    const existEnd = new Date(existing.meeting_end_time || existing.meeting_time).getTime();
+
+                    // 时间重叠判定逻辑：(新开始 < 已结束) 且 (新结束 > 已开始)
+                    if (newStart < existEnd && newEnd > existStart) {
+                        alert(`⚠️ 会议冲突提示！\n\n地点：${newData.location}\n该时段已有会议：\n「${existing.title}」\n时间：${existing.meeting_time.replace('T',' ')} 至 ${existing.meeting_end_time ? existing.meeting_end_time.split('T')[1] : '结束'}\n\n请修改时间或更换会场。`);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         document.getElementById('addMeetingForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const editId = document.getElementById('edit_id').value;
@@ -267,6 +262,10 @@
                 status: document.getElementById('status').value,
                 notes: document.getElementById('notes').value
             };
+
+            // 提交前执行冲突检测
+            if (checkMeetingConflict(data)) return;
+
             await fetch('/api/meetings', {
                 method: editId ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Web-Password': authToken },
