@@ -34,9 +34,6 @@
             vertical-align: middle;
             color: #4b5563;
         }
-        tbody tr:last-child td { border-bottom: none; }
-        th:last-child, td:last-child { border-right: none; }
-
         .nowrap-column { white-space: nowrap !important; width: 1%; }
         .notes-column {
             min-width: 150px;
@@ -44,7 +41,6 @@
             white-space: normal !important;
             text-align: left !important;
         }
-
         #mainContent { display: none; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #bae6fd; border-radius: 3px; }
@@ -52,20 +48,15 @@
 </head>
 <body class="bg-gray-50">
 
-    <div id="loginOverlay" class="fixed inset-0 flex items-center justify-center z-[999] overflow-hidden">
+    <div id="loginOverlay" class="fixed inset-0 flex items-center justify-center z-[999]">
         <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-sky-200"></div>
         <div class="relative bg-white/80 backdrop-blur-xl p-10 rounded-[2.5rem] shadow-2xl w-[400px] border border-white/50 text-center">
-            <div class="w-20 h-20 bg-blue-500 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-            </div>
-            <h2 class="text-2xl font-black mb-2 text-gray-800 tracking-tight">安全认证</h2>
+            <h2 class="text-2xl font-black mb-6 text-gray-800">安全认证</h2>
             <div class="space-y-4">
-                <input type="password" id="webPassInput" placeholder="请输入访问密码" onkeypress="if(event.keyCode==13) checkLogin()" class="w-full bg-white/50 border border-blue-100 p-4 rounded-2xl text-center text-lg font-bold text-blue-900 outline-none">
-                <button onclick="checkLogin()" class="w-full bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95">立即进入</button>
+                <input type="password" id="webPassInput" placeholder="请输入访问密码" onkeypress="if(event.keyCode==13) checkLogin()" class="w-full border p-4 rounded-2xl text-center text-lg outline-none">
+                <button onclick="checkLogin()" class="w-full bg-blue-500 text-white p-4 rounded-2xl font-bold text-lg shadow-lg">进入系统</button>
             </div>
-            <p id="loginError" class="text-red-500 mt-4 text-sm font-medium hidden">⚠️ 密码错误</p>
+            <p id="loginError" class="text-red-500 mt-4 text-sm hidden">⚠️ 密码错误</p>
         </div>
     </div>
 
@@ -77,58 +68,63 @@
                     <p class="text-gray-400 text-sm mt-1">系统已就绪，粉色高亮显示今日及后续会议</p>
                 </div>
                 <div class="flex gap-3">
-                    <button onclick="exportToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl font-bold shadow-md transition-all flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1.01.707.293l5.414 5.414a1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        导出表格
-                    </button>
+                    <button onclick="exportToExcel()" class="bg-emerald-500 text-white px-6 py-2 rounded-xl font-bold shadow-md">导出表格</button>
                     <button onclick="logout()" class="text-gray-400 hover:text-red-500 text-sm font-medium">退出登录</button>
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-3xl shadow-sm mb-8 border border-gray-100" id="formContainer">
+            <div class="bg-white p-6 rounded-3xl shadow-sm mb-8 border border-gray-100">
                 <h2 class="text-xl font-bold mb-4 text-gray-700" id="formTitle">➕ 新增会议任务</h2>
-                <form id="addMeetingForm" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <form id="addMeetingForm" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                     <input type="hidden" id="edit_id" value="">
-                    <input type="text" id="title" placeholder="会议名称" required class="border p-3 rounded-xl md:col-span-1 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-200">
                     
                     <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-gray-400 ml-1">开始时间</label>
-                        <input type="datetime-local" id="meeting_time" required class="border p-3 rounded-xl bg-gray-50">
+                        <label class="text-[10px] text-transparent select-none">占位</label>
+                        <input type="text" id="title" placeholder="会议名称" required class="border p-3 rounded-xl bg-gray-50 h-[50px] outline-none focus:ring-2 focus:ring-blue-200">
                     </div>
+                    
                     <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-gray-400 ml-1">结束时间</label>
-                        <input type="datetime-local" id="meeting_end_time" class="border p-3 rounded-xl bg-gray-50">
+                        <label class="text-[11px] text-gray-400 ml-1 font-bold">开始时间</label>
+                        <input type="datetime-local" id="meeting_time" required class="border p-3 rounded-xl bg-gray-50 h-[50px]">
                     </div>
 
-                    <select id="location" required class="border p-3 rounded-xl bg-gray-50 outline-none self-end">
-                        <option value="" disabled selected>选择会议地点</option>
-                        <option value="会商室">会商室</option>
-                        <option value="值班室">值班室</option>
-                        <option value="指挥中心">指挥中心</option>
-                        <option value="西会议室">西会议室</option>
-                    </select>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[11px] text-gray-400 ml-1 font-bold">结束时间</label>
+                        <input type="datetime-local" id="meeting_end_time" class="border p-3 rounded-xl bg-gray-50 h-[50px]">
+                    </div>
 
-                    <select id="meeting_type" class="border p-3 rounded-xl bg-gray-50 outline-none self-end">
-                        <option value="本地会">本地会</option>
-                        <option value="视频会">视频会</option>
-                        <option value="调度会">调度会</option>
-                        <option value="参观接待">参观接待</option>
-                        <option value="突发事件">突发事件</option>
-                    </select>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-transparent select-none">占位</label>
+                        <select id="location" required class="border p-3 rounded-xl bg-gray-50 h-[50px] outline-none">
+                            <option value="" disabled selected>选择地点</option>
+                            <option value="会商室">会商室</option>
+                            <option value="值班室">值班室</option>
+                            <option value="指挥中心">指挥中心</option>
+                            <option value="西会议室">西会议室</option>
+                        </select>
+                    </div>
 
-                    <input type="text" id="department" placeholder="主办科室" class="border p-3 rounded-xl bg-gray-50">
-                    <select id="status" class="border p-3 rounded-xl bg-gray-50">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-transparent select-none">占位</label>
+                        <select id="meeting_type" class="border p-3 rounded-xl bg-gray-50 h-[50px] outline-none">
+                            <option value="本地会">本地会</option>
+                            <option value="视频会">视频会</option>
+                            <option value="调度会">调度会</option>
+                            <option value="参观接待">参观接待</option>
+                        </select>
+                    </div>
+
+                    <input type="text" id="department" placeholder="主办科室" class="border p-3 rounded-xl bg-gray-50 h-[50px]">
+                    <select id="status" class="border p-3 rounded-xl bg-gray-50 h-[50px]">
                         <option value="市级">市级</option>
                         <option value="区市参加">区市参加</option>
                         <option value="区市、镇街参加">区市、镇街参加</option>
                     </select>
-                    <input type="text" id="leader" placeholder="参会领导" class="border p-3 rounded-xl bg-gray-50">
-                    <input type="text" id="notes" placeholder="保障要求与备注" class="border p-3 rounded-xl md:col-span-2 bg-gray-50 outline-none">
+                    <input type="text" id="leader" placeholder="参会领导" class="border p-3 rounded-xl bg-gray-50 h-[50px]">
+                    <input type="text" id="notes" placeholder="保障要求与备注" class="border p-3 rounded-xl md:col-span-2 bg-gray-50 h-[50px]">
                     
                     <div class="md:col-span-5 mt-2">
-                        <button type="submit" id="submitBtn" class="w-full bg-blue-500 text-white p-4 rounded-xl font-black text-lg shadow-lg hover:bg-blue-600 transition-colors">保存会议排期</button>
+                        <button type="submit" id="submitBtn" class="w-full bg-blue-500 text-white p-4 rounded-xl font-black text-lg shadow-lg hover:bg-blue-600">保存会议排期</button>
                     </div>
                 </form>
             </div>
@@ -140,13 +136,13 @@
                             <tr>
                                 <th class="text-center nowrap-column">序号</th>
                                 <th class="text-center nowrap-column">会议名称</th>
-                                <th class="text-center nowrap-column">会议起止时间</th>
+                                <th class="text-center nowrap-column">起止时间</th>
                                 <th class="text-center nowrap-column">地点</th>
                                 <th class="text-center nowrap-column">类型</th>
                                 <th class="text-center nowrap-column">主办科室</th>
                                 <th class="text-center">参会领导</th>
-                                <th class="text-center">参会范围</th>
-                                <th class="text-left notes-column">保障备注</th>
+                                <th class="text-center">范围</th>
+                                <th class="text-left notes-column">备注</th>
                                 <th class="text-center no-export">操作</th>
                             </tr>
                         </thead>
@@ -179,61 +175,44 @@
         function logout() { sessionStorage.removeItem('meeting_access_token'); location.reload(); }
 
         async function loadMeetings() {
-            try {
-                const res = await fetch('/api/meetings', { headers: { 'X-Web-Password': authToken } });
-                if (!res.ok) { logout(); return; }
-                meetingDataList = await res.json();
-                renderTable();
-            } catch (e) { console.error(e); }
+            const res = await fetch('/api/meetings', { headers: { 'X-Web-Password': authToken } });
+            if (res.ok) { meetingDataList = await res.json(); renderTable(); }
         }
 
         function renderTable() {
             const tbody = document.getElementById('meetingList');
             tbody.innerHTML = '';
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const typeColorMap = {
-                '本地会': 'bg-blue-100 text-blue-700 border-blue-200',
-                '视频会': 'bg-purple-100 text-purple-700 border-purple-200',
-                '调度会': 'bg-orange-100 text-orange-700 border-orange-200',
-                '参观接待': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-                '突发事件': 'bg-red-100 text-red-700 border-red-200'
-            };
+            const today = new Date().setHours(0,0,0,0);
 
             meetingDataList.forEach((m, index) => {
-                const meetingDate = new Date(m.meeting_time);
-                const isFutureOrToday = meetingDate >= today;
-                const rowHighlightClass = isFutureOrToday ? 'bg-pink-50 border-l-4 border-l-pink-400' : 'opacity-60 bg-white';
-                const titleTextColor = isFutureOrToday ? 'text-black font-bold' : 'text-gray-800';
-                let statusColor = m.status.includes('镇街') ? 'text-red-600 font-bold' : (m.status.includes('区市') ? 'text-blue-600 font-bold' : 'text-gray-500');
-                let typeStyle = typeColorMap[m.meeting_type] || 'bg-gray-100 text-gray-700 border-gray-200';
+                const isFuture = new Date(m.meeting_time) >= today;
+                const rowClass = isFuture ? 'bg-pink-50 border-l-4 border-l-pink-400' : 'opacity-60 bg-white';
                 
-                // 处理结束时间显示
-                const startTimeStr = m.meeting_time ? m.meeting_time.replace('T', ' ') : '-';
-                const endTimeStr = m.meeting_end_time ? m.meeting_end_time.replace('T', ' ') : null;
+                // 处理起止时间
+                const start = m.meeting_time ? m.meeting_time.replace('T', ' ') : '-';
+                const end = m.meeting_end_time ? m.meeting_end_time.replace('T', ' ') : null;
 
                 tbody.innerHTML += `
-                    <tr class="hover:bg-pink-100/50 transition-colors ${rowHighlightClass}">
-                        <td class="text-center text-gray-400 font-mono text-sm nowrap-column">${index + 1}</td>
-                        <td class="text-center text-sm nowrap-column ${titleTextColor}">${m.title}</td>
-                        <td class="text-left whitespace-nowrap text-gray-500 text-xs px-4">
-                            <div class="flex flex-col gap-1">
-                                <span><b class="text-blue-400">始:</b> ${startTimeStr}</span>
-                                ${endTimeStr ? `<span><b class="text-red-400">终:</b> ${endTimeStr}</span>` : ''}
+                    <tr class="hover:bg-pink-100/50 ${rowClass}">
+                        <td class="text-center text-gray-400 font-mono text-sm">${index + 1}</td>
+                        <td class="text-center text-sm font-bold">${m.title}</td>
+                        <td class="px-4 py-2">
+                            <div class="flex flex-col text-[11px] leading-tight min-w-[120px]">
+                                <div class="text-blue-600"><span class="font-bold">始:</span> ${start}</div>
+                                ${end ? `<div class="text-red-400 mt-1 border-t border-gray-100 pt-1"><span class="font-bold">终:</span> ${end}</div>` : ''}
                             </div>
                         </td>
-                        <td class="text-center text-gray-600 text-sm nowrap-column">${m.location}</td>
-                        <td class="text-center nowrap-column">
-                            <span class="px-3 py-1 rounded-full text-xs font-bold border ${typeStyle}">${m.meeting_type}</span>
+                        <td class="text-center text-sm">${m.location}</td>
+                        <td class="text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border border-blue-200 bg-blue-50">${m.meeting_type}</span>
                         </td>
-                        <td class="text-center text-gray-600 text-sm nowrap-column">${m.department || '-'}</td>
+                        <td class="text-center text-sm">${m.department || '-'}</td>
                         <td class="text-center">${createLeaderTags(m.leader)}</td>
-                        <td class="text-center whitespace-nowrap text-sm ${statusColor}">${m.status}</td>
-                        <td class="notes-column text-gray-500 text-sm leading-relaxed">${m.notes || '-'}</td>
-                        <td class="text-center whitespace-nowrap no-export">
-                            <button onclick="editMeeting(${m.id})" class="text-blue-500 hover:text-blue-700 font-bold mr-3 underline text-sm">修改</button>
-                            <button onclick="deleteMeeting(${m.id})" class="text-red-400 hover:text-red-600 font-bold underline text-sm">删除</button>
+                        <td class="text-center text-sm">${m.status}</td>
+                        <td class="notes-column text-xs text-gray-500">${m.notes || '-'}</td>
+                        <td class="text-center no-export">
+                            <button onclick="editMeeting(${m.id})" class="text-blue-500 mr-2 underline text-xs">修改</button>
+                            <button onclick="deleteMeeting(${m.id})" class="text-red-400 underline text-xs">删除</button>
                         </td>
                     </tr>`;
             });
@@ -241,19 +220,7 @@
 
         function createLeaderTags(str) {
             if (!str || str === '-') return '-';
-            return str.split(/[、,，\s]+/).filter(n => n.trim() !== '').map(name => 
-                `<span class="inline-block bg-blue-50 text-black border border-blue-100 px-2 py-0.5 rounded-lg mr-1 mb-1 text-sm whitespace-nowrap">${name}</span>`
-            ).join('');
-        }
-
-        function exportToExcel() {
-            const table = document.getElementById('meetingTableMain');
-            const noExportItems = document.querySelectorAll('.no-export');
-            noExportItems.forEach(el => el.style.display = 'none');
-            const dateStr = new Date().toISOString().slice(0, 10);
-            const wb = XLSX.utils.table_to_book(table, { sheet: "每周会议保障" });
-            noExportItems.forEach(el => el.style.display = '');
-            XLSX.writeFile(wb, `会议保障排期表_${dateStr}.xlsx`);
+            return str.split(/[、,，\s]+/).map(name => `<span class="inline-block bg-white border border-gray-200 px-1.5 py-0.5 rounded mr-1 mb-1 text-[11px]">${name}</span>`).join('');
         }
 
         document.getElementById('addMeetingForm').addEventListener('submit', async (e) => {
@@ -263,7 +230,7 @@
                 id: editId ? Number(editId) : undefined,
                 title: document.getElementById('title').value,
                 meeting_time: document.getElementById('meeting_time').value,
-                meeting_end_time: document.getElementById('meeting_end_time').value, // 新增结束时间
+                meeting_end_time: document.getElementById('meeting_end_time').value,
                 location: document.getElementById('location').value,
                 meeting_type: document.getElementById('meeting_type').value,
                 department: document.getElementById('department').value,
@@ -279,22 +246,12 @@
             resetForm(); loadMeetings();
         });
 
-        async function deleteMeeting(id) {
-            const pwd = prompt("删除确认密码：");
-            if (!pwd) return;
-            const res = await fetch(`/api/meetings?id=${id}`, {
-                method: 'DELETE',
-                headers: { 'X-Admin-Password': pwd, 'X-Web-Password': authToken }
-            });
-            if (res.ok) loadMeetings(); else alert("认证失败");
-        }
-
         function editMeeting(id) {
             const m = meetingDataList.find(i => i.id === id);
             document.getElementById('edit_id').value = m.id;
             document.getElementById('title').value = m.title;
             document.getElementById('meeting_time').value = m.meeting_time;
-            document.getElementById('meeting_end_time').value = m.meeting_end_time || ''; // 填充结束时间
+            document.getElementById('meeting_end_time').value = m.meeting_end_time || '';
             document.getElementById('location').value = m.location;
             document.getElementById('meeting_type').value = m.meeting_type;
             document.getElementById('department').value = m.department;
@@ -309,6 +266,21 @@
             document.getElementById('addMeetingForm').reset();
             document.getElementById('edit_id').value = '';
             document.getElementById('formTitle').innerText = '➕ 新增会议任务';
+        }
+
+        async function deleteMeeting(id) {
+            const pwd = prompt("删除确认密码：");
+            if (!pwd) return;
+            const res = await fetch(`/api/meetings?id=${id}`, {
+                method: 'DELETE',
+                headers: { 'X-Admin-Password': pwd, 'X-Web-Password': authToken }
+            });
+            if (res.ok) loadMeetings();
+        }
+
+        function exportToExcel() {
+            const table = document.getElementById('meetingTableMain');
+            XLSX.writeFile(XLSX.utils.table_to_book(table), `会议排期_${new Date().toLocaleDateString()}.xlsx`);
         }
     </script>
 </body>
