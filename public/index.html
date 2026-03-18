@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>每周会议保障清单 - 安全认证</title>
+    <title>会议保障排期表 - 安全认证</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* 核心布局 */
+        /* 核心布局保持不变 */
         .table-container {
             border: 1px solid #e5e7eb;
             border-radius: 12px;
@@ -36,13 +38,7 @@
         tbody tr:last-child td { border-bottom: none; }
         th:last-child, td:last-child { border-right: none; }
 
-        /* 强制不换行列 */
-        .nowrap-column {
-            white-space: nowrap !important;
-            width: 1%; 
-        }
-
-        /* 备注列弹性压缩 */
+        .nowrap-column { white-space: nowrap !important; width: 1%; }
         .notes-column {
             min-width: 150px;
             word-break: break-all;
@@ -78,13 +74,13 @@
         <div class="w-[98%] mx-auto">
             <div class="flex justify-between items-end mb-8">
                 <div>
-                    <h1 class="text-3xl font-black text-blue-600">📊 每周会议保障排期表</h1>
-                    <p class="text-gray-400 text-sm mt-1">系统已就绪，支持分色显示与 Excel 导出</p>
+                    <h1 class="text-3xl font-black text-blue-600">🗓️ 会议保障排期表</h1>
+                    <p class="text-gray-400 text-sm mt-1">系统已就绪，粉色高亮显示今日及后续会议</p>
                 </div>
                 <div class="flex gap-3">
                     <button onclick="exportToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl font-bold shadow-md transition-all flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1.01.707.293l5.414 5.414a1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         导出表格
                     </button>
@@ -96,8 +92,9 @@
                 <h2 class="text-xl font-bold mb-4 text-gray-700" id="formTitle">➕ 新增会议任务</h2>
                 <form id="addMeetingForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <input type="hidden" id="edit_id" value="">
-                    <input type="text" id="title" placeholder="会议名称" required class="border p-3 rounded-xl md:col-span-2 bg-gray-50 outline-none">
-                    <input type="datetime-local" id="meeting_time" required class="border p-3 rounded-xl bg-gray-50">
+                    <input type="text" id="title" placeholder="会议名称" required class="border p-3 rounded-xl md:col-span-2 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-200">
+                    <input type="datetime-local" id="meeting_time" title="开始时间" required class="border p-3 rounded-xl bg-gray-50">
+                    <input type="datetime-local" id="meeting_end_time" title="结束时间" class="border p-3 rounded-xl bg-gray-50">
                     
                     <select id="location" required class="border p-3 rounded-xl bg-gray-50 outline-none">
                         <option value="" disabled selected>选择会议地点</option>
@@ -122,9 +119,9 @@
                         <option value="区市、镇街参加">区市、镇街参加</option>
                     </select>
                     <input type="text" id="leader" placeholder="参会领导" class="border p-3 rounded-xl bg-gray-50">
-                    <input type="text" id="notes" placeholder="保障要求与备注" class="border p-3 rounded-xl md:col-span-4 bg-gray-50 outline-none">
+                    <input type="text" id="notes" placeholder="保障要求与备注" class="border p-3 rounded-xl md:col-span-3 bg-gray-50 outline-none">
                     <div class="md:col-span-4 mt-2">
-                        <button type="submit" id="submitBtn" class="w-full bg-blue-500 text-white p-4 rounded-xl font-black text-lg shadow-lg">保存会议排期</button>
+                        <button type="submit" id="submitBtn" class="w-full bg-blue-500 text-white p-4 rounded-xl font-black text-lg shadow-lg hover:bg-blue-600 transition-colors">保存会议排期</button>
                     </div>
                 </form>
             </div>
@@ -136,7 +133,7 @@
                             <tr>
                                 <th class="text-center nowrap-column">序号</th>
                                 <th class="text-center nowrap-column">会议名称</th>
-                                <th class="text-center nowrap-column">时间</th>
+                                <th class="text-center nowrap-column">起止时间</th>
                                 <th class="text-center nowrap-column">地点</th>
                                 <th class="text-center nowrap-column">类型</th>
                                 <th class="text-center nowrap-column">主办科室</th>
@@ -187,7 +184,9 @@
             const tbody = document.getElementById('meetingList');
             tbody.innerHTML = '';
             
-            // 颜色映射表
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
             const typeColorMap = {
                 '本地会': 'bg-blue-100 text-blue-700 border-blue-200',
                 '视频会': 'bg-purple-100 text-purple-700 border-purple-200',
@@ -197,14 +196,29 @@
             };
 
             meetingDataList.forEach((m, index) => {
+                const meetingDate = new Date(m.meeting_time);
+                const isFutureOrToday = meetingDate >= today;
+
+                const rowHighlightClass = isFutureOrToday 
+                    ? 'bg-pink-50 border-l-4 border-l-pink-400' 
+                    : 'opacity-60 bg-white';
+                
+                const titleTextColor = isFutureOrToday ? 'text-black font-bold' : 'text-gray-800';
+
                 let statusColor = m.status.includes('镇街') ? 'text-red-600 font-bold' : (m.status.includes('区市') ? 'text-blue-600 font-bold' : 'text-gray-500');
                 let typeStyle = typeColorMap[m.meeting_type] || 'bg-gray-100 text-gray-700 border-gray-200';
                 
+                // 时间列处理：显示起止时间
+                const timeDisplay = `
+                    <div class="text-xs text-blue-600 font-bold">${m.meeting_time.replace('T', ' ')}</div>
+                    <div class="text-[10px] text-gray-400">至 ${m.meeting_end_time ? m.meeting_end_time.replace('T', ' ') : '-'}</div>
+                `;
+
                 tbody.innerHTML += `
-                    <tr class="hover:bg-blue-50/30 transition-colors">
+                    <tr class="hover:bg-pink-100/50 transition-colors ${rowHighlightClass}">
                         <td class="text-center text-gray-400 font-mono text-sm nowrap-column">${index + 1}</td>
-                        <td class="text-gray-800 text-center text-sm nowrap-column">${m.title}</td>
-                        <td class="text-center whitespace-nowrap text-gray-500 text-sm">${m.meeting_time.replace('T', ' ')}</td>
+                        <td class="text-center text-sm nowrap-column ${titleTextColor}">${m.title}</td>
+                        <td class="text-center whitespace-nowrap text-sm">${timeDisplay}</td>
                         <td class="text-center text-gray-600 text-sm nowrap-column">${m.location}</td>
                         <td class="text-center nowrap-column">
                             <span class="px-3 py-1 rounded-full text-xs font-bold border ${typeStyle}">${m.meeting_type}</span>
@@ -228,20 +242,16 @@
             ).join('');
         }
 
-        // Excel 导出
         function exportToExcel() {
             const table = document.getElementById('meetingTableMain');
             const noExportItems = document.querySelectorAll('.no-export');
             noExportItems.forEach(el => el.style.display = 'none');
-
             const dateStr = new Date().toISOString().slice(0, 10);
             const wb = XLSX.utils.table_to_book(table, { sheet: "每周会议保障" });
-            
             noExportItems.forEach(el => el.style.display = '');
             XLSX.writeFile(wb, `会议保障排期表_${dateStr}.xlsx`);
         }
 
-        // 表单提交
         document.getElementById('addMeetingForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const editId = document.getElementById('edit_id').value;
@@ -249,6 +259,7 @@
                 id: editId ? Number(editId) : undefined,
                 title: document.getElementById('title').value,
                 meeting_time: document.getElementById('meeting_time').value,
+                meeting_end_time: document.getElementById('meeting_end_time').value,
                 location: document.getElementById('location').value,
                 meeting_type: document.getElementById('meeting_type').value,
                 department: document.getElementById('department').value,
@@ -279,6 +290,7 @@
             document.getElementById('edit_id').value = m.id;
             document.getElementById('title').value = m.title;
             document.getElementById('meeting_time').value = m.meeting_time;
+            document.getElementById('meeting_end_time').value = m.meeting_end_time || '';
             document.getElementById('location').value = m.location;
             document.getElementById('meeting_type').value = m.meeting_type;
             document.getElementById('department').value = m.department;
