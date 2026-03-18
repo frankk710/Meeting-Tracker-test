@@ -9,7 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* 核心布局保持不变 */
         .table-container {
             border: 1px solid #e5e7eb;
             border-radius: 12px;
@@ -90,12 +89,20 @@
 
             <div class="bg-white p-6 rounded-3xl shadow-sm mb-8 border border-gray-100" id="formContainer">
                 <h2 class="text-xl font-bold mb-4 text-gray-700" id="formTitle">➕ 新增会议任务</h2>
-                <form id="addMeetingForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <form id="addMeetingForm" class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <input type="hidden" id="edit_id" value="">
-                    <input type="text" id="title" placeholder="会议名称" required class="border p-3 rounded-xl md:col-span-2 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-200">
-                    <input type="datetime-local" id="meeting_time" required class="border p-3 rounded-xl bg-gray-50">
+                    <input type="text" id="title" placeholder="会议名称" required class="border p-3 rounded-xl md:col-span-1 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-200">
                     
-                    <select id="location" required class="border p-3 rounded-xl bg-gray-50 outline-none">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-gray-400 ml-1">开始时间</label>
+                        <input type="datetime-local" id="meeting_time" required class="border p-3 rounded-xl bg-gray-50">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-gray-400 ml-1">结束时间</label>
+                        <input type="datetime-local" id="meeting_end_time" class="border p-3 rounded-xl bg-gray-50">
+                    </div>
+
+                    <select id="location" required class="border p-3 rounded-xl bg-gray-50 outline-none self-end">
                         <option value="" disabled selected>选择会议地点</option>
                         <option value="会商室">会商室</option>
                         <option value="值班室">值班室</option>
@@ -103,7 +110,7 @@
                         <option value="西会议室">西会议室</option>
                     </select>
 
-                    <select id="meeting_type" class="border p-3 rounded-xl bg-gray-50 outline-none">
+                    <select id="meeting_type" class="border p-3 rounded-xl bg-gray-50 outline-none self-end">
                         <option value="本地会">本地会</option>
                         <option value="视频会">视频会</option>
                         <option value="调度会">调度会</option>
@@ -118,8 +125,9 @@
                         <option value="区市、镇街参加">区市、镇街参加</option>
                     </select>
                     <input type="text" id="leader" placeholder="参会领导" class="border p-3 rounded-xl bg-gray-50">
-                    <input type="text" id="notes" placeholder="保障要求与备注" class="border p-3 rounded-xl md:col-span-4 bg-gray-50 outline-none">
-                    <div class="md:col-span-4 mt-2">
+                    <input type="text" id="notes" placeholder="保障要求与备注" class="border p-3 rounded-xl md:col-span-2 bg-gray-50 outline-none">
+                    
+                    <div class="md:col-span-5 mt-2">
                         <button type="submit" id="submitBtn" class="w-full bg-blue-500 text-white p-4 rounded-xl font-black text-lg shadow-lg hover:bg-blue-600 transition-colors">保存会议排期</button>
                     </div>
                 </form>
@@ -132,7 +140,7 @@
                             <tr>
                                 <th class="text-center nowrap-column">序号</th>
                                 <th class="text-center nowrap-column">会议名称</th>
-                                <th class="text-center nowrap-column">时间</th>
+                                <th class="text-center nowrap-column">会议起止时间</th>
                                 <th class="text-center nowrap-column">地点</th>
                                 <th class="text-center nowrap-column">类型</th>
                                 <th class="text-center nowrap-column">主办科室</th>
@@ -182,8 +190,6 @@
         function renderTable() {
             const tbody = document.getElementById('meetingList');
             tbody.innerHTML = '';
-            
-            // 获取今日日期基准（不含时分秒）
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
@@ -196,25 +202,27 @@
             };
 
             meetingDataList.forEach((m, index) => {
-                // 会议日期判定
                 const meetingDate = new Date(m.meeting_time);
                 const isFutureOrToday = meetingDate >= today;
-
-                // 核心修改：今日及以后使用粉色底色，过去使用淡灰色
-                const rowHighlightClass = isFutureOrToday 
-                    ? 'bg-pink-50 border-l-4 border-l-pink-400' 
-                    : 'opacity-60 bg-white';
-                
+                const rowHighlightClass = isFutureOrToday ? 'bg-pink-50 border-l-4 border-l-pink-400' : 'opacity-60 bg-white';
                 const titleTextColor = isFutureOrToday ? 'text-black font-bold' : 'text-gray-800';
-
                 let statusColor = m.status.includes('镇街') ? 'text-red-600 font-bold' : (m.status.includes('区市') ? 'text-blue-600 font-bold' : 'text-gray-500');
                 let typeStyle = typeColorMap[m.meeting_type] || 'bg-gray-100 text-gray-700 border-gray-200';
                 
+                // 处理结束时间显示
+                const startTimeStr = m.meeting_time ? m.meeting_time.replace('T', ' ') : '-';
+                const endTimeStr = m.meeting_end_time ? m.meeting_end_time.replace('T', ' ') : null;
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-pink-100/50 transition-colors ${rowHighlightClass}">
                         <td class="text-center text-gray-400 font-mono text-sm nowrap-column">${index + 1}</td>
                         <td class="text-center text-sm nowrap-column ${titleTextColor}">${m.title}</td>
-                        <td class="text-center whitespace-nowrap text-gray-500 text-sm">${m.meeting_time.replace('T', ' ')}</td>
+                        <td class="text-left whitespace-nowrap text-gray-500 text-xs px-4">
+                            <div class="flex flex-col gap-1">
+                                <span><b class="text-blue-400">始:</b> ${startTimeStr}</span>
+                                ${endTimeStr ? `<span><b class="text-red-400">终:</b> ${endTimeStr}</span>` : ''}
+                            </div>
+                        </td>
                         <td class="text-center text-gray-600 text-sm nowrap-column">${m.location}</td>
                         <td class="text-center nowrap-column">
                             <span class="px-3 py-1 rounded-full text-xs font-bold border ${typeStyle}">${m.meeting_type}</span>
@@ -255,6 +263,7 @@
                 id: editId ? Number(editId) : undefined,
                 title: document.getElementById('title').value,
                 meeting_time: document.getElementById('meeting_time').value,
+                meeting_end_time: document.getElementById('meeting_end_time').value, // 新增结束时间
                 location: document.getElementById('location').value,
                 meeting_type: document.getElementById('meeting_type').value,
                 department: document.getElementById('department').value,
@@ -285,6 +294,7 @@
             document.getElementById('edit_id').value = m.id;
             document.getElementById('title').value = m.title;
             document.getElementById('meeting_time').value = m.meeting_time;
+            document.getElementById('meeting_end_time').value = m.meeting_end_time || ''; // 填充结束时间
             document.getElementById('location').value = m.location;
             document.getElementById('meeting_type').value = m.meeting_type;
             document.getElementById('department').value = m.department;
