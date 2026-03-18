@@ -38,9 +38,10 @@
                 <div>
                     <h1 class="text-3xl font-black text-blue-600">🗓️ 会议保障排期表</h1>
                     <p class="text-gray-400 text-sm mt-1">系统已就绪，粉色高亮显示今日及后续会议</p>
-                </div> 
-                <div class="flex gap-3">
-                    <button onclick="exportToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl font-bold shadow-md flex items-center gap-2">导出表格</button>
+                </div>
+                <div class="flex items-center gap-5">
+                    <button onclick="exportToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl font-bold shadow-md flex items-center gap-2 transition-all">导出表格</button>
+                    <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition-colors text-sm font-medium cursor-pointer">退出登录</button>
                 </div>
             </div>
 
@@ -127,6 +128,11 @@
             document.getElementById('loginOverlay').classList.add('hidden');
             document.getElementById('mainContent').style.display = 'block';
             loadMeetings();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('meeting_access_token');
+            location.reload();
         }
 
         async function loadMeetings() {
