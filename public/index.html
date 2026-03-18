@@ -19,6 +19,7 @@
             background: white;
         }
         
+        /* 启用固定表格布局，精准控制列宽，把剩余空间全给备注 */
         table { border-collapse: collapse; width: 100%; table-layout: fixed; }
         
         thead th {
@@ -40,8 +41,12 @@
         }
         tbody tr:last-child td { border-bottom: none; }
 
-        .leader-column { width: 160px !important; }
+        /* 参会领导列：宽度绝对锁死 */
+        .leader-column {
+            width: 160px !important;
+        }
         
+        /* 备注列：宽度自适应，强制换行 */
         .notes-column {
             word-wrap: break-word;
             word-break: break-all;
@@ -50,6 +55,7 @@
             line-height: 1.5;
         }
 
+        #mainContent { display: none; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
@@ -77,6 +83,16 @@
     </style>
 </head>
 <body class="bg-[#f8fafc] min-h-screen">
+
+    <div id="loginOverlay" class="fixed inset-0 flex items-center justify-center z-[999]">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-sky-200"></div>
+        <div class="relative bg-white/80 backdrop-blur-xl p-10 rounded-[2.5rem] shadow-2xl w-[400px] text-center">
+            <h2 class="text-2xl font-black mb-6 text-gray-800">安全认证</h2>
+            <input type="password" id="webPassInput" placeholder="请输入访问密码" onkeypress="if(event.keyCode==13) checkLogin()" class="form-control w-full p-4 rounded-xl text-center mb-4">
+            <button onclick="checkLogin()" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold hover:bg-blue-700">进入系统</button>
+            <p id="loginError" class="text-red-500 mt-4 text-sm hidden">⚠️ 密码错误</p>
+        </div>
+    </div>
 
     <div id="mainContent" class="p-6">
         <div class="w-[98%] mx-auto">
@@ -180,23 +196,34 @@
 
     <script>
         let meetingDataList = [];
+        let authToken = sessionStorage.getItem('meeting_access_token');
 
-        // 页面加载直接执行
-        window.onload = () => {
-            loadMeetings();
-        };
+        window.onload = () => { if (authToken) showSystem(); };
 
-        async function loadMeetings() {
-            try {
-                // 如果后端接口没关验证，这里可能还是会报错，但前端已经不主动拦截了
-                const res = await fetch('/api/meetings');
-                meetingDataList = await res.json();
-                renderTable();
-            } catch (err) {
-                console.error("加载数据失败:", err);
-            }
+        async function checkLogin() {
+            const pwd = document.getElementById('webPassInput').value;
+            const res = await fetch('/api/meetings', { headers: { 'X-Web-Password': pwd } });
+            if (res.ok) { sessionStorage.setItem('meeting_access_token', pwd); authToken = pwd; showSystem(); }
+            else { document.getElementById('loginError').classList.remove('hidden'); }
         }
 
+        function showSystem() {
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('mainContent').style.display = 'block';
+            loadMeetings();
+        }
+
+        async function loadMeetings() {
+            const res = await fetch('/api/meetings', { headers: { 'X-Web-Password': authToken } });
+            meetingDataList = await res.json();
+            renderTable();
+        }
+
+        // ==========================================
+        // UI 渲染逻辑
+        // ==========================================
+
+        // 时间格式化：始（蓝） 终（红）
         function formatTime(startStr, endStr) {
             if (!startStr) return '-';
             const start = startStr.replace('T', ' ');
@@ -208,6 +235,7 @@
             return html;
         }
 
+        // [永远锁死，不可修改] 参会领导：一行最多两个，多出自动换行，软蓝色调
         function createLeaderTags(str) {
             if (!str || str === '-') return '-';
             const names = str.split(/[、,，\s]+/).filter(n => n.trim() !== '');
@@ -222,6 +250,7 @@
         function renderTable() {
             const tbody = document.getElementById('meetingList');
             tbody.innerHTML = '';
+            
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
@@ -235,6 +264,7 @@
                 const meetingDate = new Date(m.meeting_time);
                 const isHighlight = meetingDate >= today;
                 const rowClass = isHighlight ? 'row-highlight bg-pink-50/30' : 'row-normal';
+                
                 const typeStyle = typeColorMap[m.meeting_type] || 'bg-gray-100 text-gray-600';
                 
                 let statusHtml = m.status;
@@ -247,12 +277,14 @@
                         <td class="text-center text-gray-400 text-sm">${index + 1}</td>
                         <td class="text-center text-[14px] font-bold text-gray-800">${m.title}</td>
                         <td class="text-center">${formatTime(m.meeting_time, m.meeting_end_time)}</td>
+                        
                         <td class="text-center">
                             <div class="flex flex-col items-center justify-center gap-1.5">
                                 <span class="text-[13px] text-gray-700 font-medium">${m.location}</span>
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${typeStyle} whitespace-nowrap">${m.meeting_type}</span>
                             </div>
                         </td>
+                        
                         <td class="text-center text-sm text-gray-600">${m.department || '-'}</td>
                         <td class="leader-column text-center px-1">${createLeaderTags(m.leader)}</td>
                         <td class="text-center text-sm">${statusHtml}</td>
@@ -266,6 +298,10 @@
                     </tr>`;
             });
         }
+
+        // ==========================================
+        // 数据操作逻辑
+        // ==========================================
 
         document.getElementById('addMeetingForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -284,7 +320,7 @@
             };
             await fetch('/api/meetings', {
                 method: editId ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-Web-Password': authToken },
                 body: JSON.stringify(data)
             });
             e.target.reset();
@@ -295,7 +331,10 @@
 
         async function deleteMeeting(id) {
             if(!confirm("确定删除该会议吗？")) return;
-            await fetch(`/api/meetings?id=${id}`, { method: 'DELETE' });
+            await fetch(`/api/meetings?id=${id}`, { 
+                method: 'DELETE', 
+                headers: { 'X-Web-Password': authToken, 'X-Admin-Password': authToken } 
+            });
             loadMeetings();
         }
 
@@ -311,6 +350,7 @@
             document.getElementById('leader').value = m.leader || '';
             document.getElementById('status').value = m.status;
             document.getElementById('notes').value = m.notes || '';
+            
             document.getElementById('formTitle').innerHTML = '<span class="text-orange-500 text-xl">✎</span> 修改会议任务';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
