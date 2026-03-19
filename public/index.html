@@ -163,9 +163,9 @@
                 const isFutureOrToday = meetingDate >= today;
                 const rowHighlightClass = isFutureOrToday ? 'bg-pink-50 border-l-4 border-l-pink-400' : 'opacity-60 bg-white';
                 
-                let timeDisplay = `<div class="text-blue-600 font-medium">始: ${m.meeting_time.replace('T', ' ')}</div>`;
+                let timeDisplay = `<div class="text-blue-600 font-medium">起: ${m.meeting_time.replace('T', ' ')}</div>`;
                 if (m.meeting_end_time && m.meeting_end_time.trim() !== "") {
-                    timeDisplay += `<div class="text-red-500 font-medium">终: ${m.meeting_end_time.replace('T', ' ')}</div>`;
+                    timeDisplay += `<div class="text-red-500 font-medium">止: ${m.meeting_end_time.replace('T', ' ')}</div>`;
                 }
 
                 let statusColor = m.status.includes('镇街') ? 'text-red-600 font-bold' : (m.status.includes('区市') ? 'text-blue-600 font-bold' : 'text-gray-500');
