@@ -1,4 +1,4 @@
-<img width="597" height="25" alt="image" src="https://github.com/user-attachments/assets/29ef7853-a68a-4c31-8f81-93f75ad9b398" /><img width="265" height="25" alt="image" src="https://github.com/user-attachments/assets/afede2ad-51ee-445d-a973-1860988e77ca" /><img width="412" height="25" alt="image" src="https://github.com/user-attachments/assets/e3bc1503-6a33-49ca-a03a-3421f529156b" /><img width="204" height="28" alt="image" src="https://github.com/user-attachments/assets/e9af1b46-b566-496e-827b-1bb3877aaf54" /># 📊 会议保障排期表 - 安装与部署说明
+# 📊 会议保障排期表 - 安装与部署说明
 
 本项目是一个基于 **Cloudflare** 生态构建的轻量级会议管理系统。采用前后端分离架构，利用 Cloudflare Pages 托管前端，Workers 处理 API，D1 数据库存储数据。
 
