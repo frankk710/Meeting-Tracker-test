@@ -1,4 +1,4 @@
-# 📊 会议保障排期表 - 安装与部署说明
+<img width="597" height="25" alt="image" src="https://github.com/user-attachments/assets/29ef7853-a68a-4c31-8f81-93f75ad9b398" /><img width="265" height="25" alt="image" src="https://github.com/user-attachments/assets/afede2ad-51ee-445d-a973-1860988e77ca" /><img width="412" height="25" alt="image" src="https://github.com/user-attachments/assets/e3bc1503-6a33-49ca-a03a-3421f529156b" /><img width="204" height="28" alt="image" src="https://github.com/user-attachments/assets/e9af1b46-b566-496e-827b-1bb3877aaf54" /># 📊 会议保障排期表 - 安装与部署说明
 
 本项目是一个基于 **Cloudflare** 生态构建的轻量级会议管理系统。采用前后端分离架构，利用 Cloudflare Pages 托管前端，Workers 处理 API，D1 数据库存储数据。
 
@@ -21,37 +21,61 @@
 ### 1. 准备数据库 (Cloudflare D1)
 1.  登录 Cloudflare 控制台，进入 **Workers & Pages** -> **D1**。
 2.  创建一个名为 `meeting_db` 的数据库。
-3.  在数据库控制台中执行以下 SQL 语句初始化表结构：
+3.  创建成功后，你会看到一个 `Database ID`（一串英文字母和数字）。
+4.  重要： 回到你的 GitHub 仓库，修改 `wrangler.toml` 文件，把刚才那个 ID 填入 `database_id = "你的ID"` 中。
+5.  在数据库控制台中执行以下 SQL 语句初始化表结构：
     ```sql
+    -- 1. 如果表已存在则删除（执行此步会清空已有会议数据，请知悉）
     DROP TABLE IF EXISTS meetings;
+    -- 2. 创建结构完全匹配前端逻辑的表
     CREATE TABLE meetings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,          -- 会议名称
-    meeting_time TEXT NOT NULL,   -- 会议时间
-    location TEXT,                -- 会议地点
-    meeting_type TEXT DEFAULT '本地会', -- 会议类型
-    department TEXT,              -- 主办科室
-    leader TEXT,                  -- 参会领导
-    status TEXT DEFAULT '都不参加',  -- 参会范围
-    notes TEXT                    -- 备注/保障要求
+    id INTEGER PRIMARY KEY AUTOINCREMENT,            -- 唯一标识
+    title TEXT NOT NULL,                             -- 会议名称
+    meeting_time TEXT NOT NULL,                      -- 开始时间 (必填)
+    meeting_end_time TEXT,                           -- 结束时间 (对应前端新增的止时字段)
+    location TEXT NOT NULL,                          -- 会议地点 (必填)
+    meeting_type TEXT DEFAULT '本地会',               -- 会议类型
+    department TEXT,                                 -- 主办科室
+    leader TEXT,                                     -- 参会领导
+    status TEXT DEFAULT '市级',                       -- 参会范围
+    notes TEXT,                                      -- 保障要求与备注
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP    -- 自动记录创建时间
+    );
     ```
 
-### 2. 部署后端 (Cloudflare Workers)
-1.  在项目根目录下创建 `functions/api/meetings.js` 文件。
-2.  将后端接口逻辑代码粘贴至该文件。
-3.  在 Cloudflare Pages 项目设置中：
-    * 进入 **Settings** -> **Functions** -> **D1 database bindings**。
-    * 添加绑定：变量名设为 `DB`，绑定到你创建的 `meeting_db` 数据库。
+### 2. 创建 Pages 部署网站
+1.  在 Cloudflare 左侧菜单点击 **Workers & Pages** -> **Overview**。
+2.  点击 **Create** -> 选择 **Pages** 选项卡 -> 点击 **Connect to Git**。
+3.  授权连接你的 **GitHub** 账号，选择你刚才建的 **meeting-tracker** 仓库。
+4.  在构建设置（Build settings）里：
+ - Framework preset: 选择 None
+ - Build command: 留空
+ - Build output directory: 填入 public
+5. 不要急着点部署！ 往下滚动，展开 `Environment variables (环境变量)` 或 `Bindings (绑定)`。
+ -  找到 `D1 database bindings`。
+ -  Variable name (变量名) 填入：`DB`
+ -  D1 database (数据库) 选择：`meeting-db`
+6. 点击 Save and Deploy (保存并部署)。
 
 ### 3. 设置安全密码 (环境变量)
 1.  在 Cloudflare Pages 项目设置中，进入 **Settings** -> **Environment variables**。
 2.  添加一个变量 `ADMIN_PASSWORD`。
 3.  设置一个你自定义的删除权限密码（例如：`666888`）。
 4.  添加变量 `WEB_PASSWORD`（用于访问系统时的身份验证）。
+| :变量名: | :是否必须: | :示例: | :说明: |
+|------|------|------|------|
+| ADMIN_PASSWORD | 否 | 123456 | 设置一个你自定义的删除权限密码 |
+| WEB_PASSWORD | 是 | 123456 | 用于访问系统时的身份验证 |
+
+
 
 ### 4. 部署前端
 1.  将最终版的 `index.html` 放入仓库的 `public` 文件夹下。
 2.  提交代码并推送至 GitHub，Cloudflare Pages 会自动触发构建并完成部署。
+
+### 5.大功告成 🎉
+等待 1-2 分钟，Cloudflare 会给你分配一个免费的网址（类似 meeting-tracker.pages.dev）。
+点击打开这个网址，你就能看到你的【每周会议保障排期表】了！
 
 ---
 
