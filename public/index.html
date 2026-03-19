@@ -181,7 +181,7 @@
                             <span class="px-3 py-1 rounded-full text-xs font-bold border ${typeStyle}">${m.meeting_type}</span>
                         </td>
                         <td class="text-center text-gray-600 text-sm nowrap-column">${m.department || '-'}</td>
-                        <td class="text-center">${createLeaderTags(m.leader)}</td>
+                        <td class="text-center nowrap-column">${createLeaderTags(m.leader)}</td>
                         <td class="text-center nowrap-column text-sm ${statusColor}">${m.status}</td>
                         <td class="notes-column text-gray-500 text-sm leading-relaxed">${m.notes || '-'}</td>
                         <td class="text-center whitespace-nowrap no-export">
