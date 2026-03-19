@@ -161,6 +161,7 @@
             meetingDataList.forEach((m, index) => {
                 const meetingDate = new Date(m.meeting_time);
                 const isFutureOrToday = meetingDate >= today;
+                const titleFontWeight = isFutureOrToday ? 'font-bold text-gray-800' : 'font-normal text-gray-400';
                 const rowHighlightClass = isFutureOrToday ? 'bg-pink-50 border-l-4 border-l-pink-400' : 'opacity-60 bg-white';
                 
                 let timeDisplay = `<div class="text-blue-600 font-medium">起: ${m.meeting_time.replace('T', ' ')}</div>`;
