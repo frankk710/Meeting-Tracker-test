@@ -12,7 +12,7 @@
         .table-container { border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); background: white; }
         table { border-collapse: collapse; width: 100%; table-layout: auto; }
         thead th { background-color: #f9fafb; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #f3f4f6; color: #374151; font-weight: 700; padding: 16px 12px !important; font-size: 0.95rem; vertical-align: middle; }
-        tbody td { border-bottom: 1px solid #f3f4f6; border-right: 1px solid #f3f4f6; padding: 14px 12px !important; vertical-align: middle; color: #4b5563; }
+        tbody td { border-bottom: 1px solid #f3f4f6; border-right: 1px solid #f3f4f6; padding: 14px 4px !important; vertical-align: middle; color: #4b5563; }
         .nowrap-column { white-space: nowrap !important; width: 1%; }
         .notes-column { min-width: 150px; word-break: break-all; white-space: normal !important; text-align: left !important; }
         #mainContent { display: none; }
@@ -181,7 +181,7 @@
                             <span class="px-3 py-1 rounded-full text-xs font-bold border ${typeStyle}">${m.meeting_type}</span>
                         </td>
                         <td class="text-center text-gray-600 text-sm nowrap-column">${m.department || '-'}</td>
-                        <td class="text-center nowrap-column">${createLeaderTags(m.leader)}</td>
+                        <td class="text-center">${createLeaderTags(m.leader)}</td>
                         <td class="text-center nowrap-column text-sm ${statusColor}">${m.status}</td>
                         <td class="notes-column text-gray-500 text-sm leading-relaxed">${m.notes || '-'}</td>
                         <td class="text-center whitespace-nowrap no-export">
