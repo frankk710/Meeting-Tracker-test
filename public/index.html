@@ -160,6 +160,9 @@
 
             meetingDataList.forEach((m, index) => {
                 const meetingDate = new Date(m.meeting_time);
+                // 获取结束时间，如果没有填结束时间，则默认使用开始时间
+                const endTime = m.meeting_end_time ? new Date(m.meeting_end_time) : startTime;
+                // 核心改进：只要【结束时间】在今天（或之后），就判定为活跃会议（粉色）
                 const isFutureOrToday = meetingDate >= today;
                 
                 // 核心修改：定义文字颜色类名，不再统一控制粗细
