@@ -159,7 +159,7 @@
             };
 
             meetingDataList.forEach((m, index) => {
-                <!--const meetingDate = new Date(m.meeting_time);-->
+                // 获取结束时间，如果没有填结束时间，则默认使用开始时间
                 const endTime = m.meeting_end_time ? new Date(m.meeting_end_time) : startTime;
                 const isFutureOrToday = meetingDate >= today;
                 
