@@ -159,8 +159,7 @@
             };
 
             meetingDataList.forEach((m, index) => {
-                // 获取结束时间，如果没有填结束时间，则默认使用开始时间
-                const endTime = m.meeting_end_time ? new Date(m.meeting_end_time) : startTime;
+                const meetingDate = new Date(m.meeting_time);
                 const isFutureOrToday = meetingDate >= today;
                 
                 // 核心修改：定义文字颜色类名，不再统一控制粗细
