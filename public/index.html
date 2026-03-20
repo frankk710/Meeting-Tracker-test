@@ -159,7 +159,8 @@
             };
 
             meetingDataList.forEach((m, index) => {
-                const meetingDate = new Date(m.meeting_time);
+                <!--const meetingDate = new Date(m.meeting_time);-->
+                const endTime = m.meeting_end_time ? new Date(m.meeting_end_time) : startTime;
                 const isFutureOrToday = meetingDate >= today;
                 
                 // 核心修改：定义文字颜色类名，不再统一控制粗细
