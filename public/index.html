@@ -162,13 +162,14 @@
                 const meetingDate = new Date(m.meeting_time);
                 const isFutureOrToday = meetingDate >= today;
                 
-                // 核心修改：定义加粗类名
-                const fontWeightClass = isFutureOrToday ? 'font-bold text-gray-800' : 'font-normal text-gray-400';
+                // 核心修改：定义文字颜色类名，不再统一控制粗细
+                const textColorClass = isFutureOrToday ? 'text-gray-800' : 'text-gray-400';
                 const rowHighlightClass = isFutureOrToday ? 'bg-pink-50 border-l-4 border-l-pink-400' : 'opacity-60 bg-white';
                 
-                let timeDisplay = `<div class="text-blue-600 ${isFutureOrToday ? 'font-bold' : 'font-medium'}">起: ${m.meeting_time.replace('T', ' ')}</div>`;
+                // 时间显示：改为 font-medium (不使用加粗)
+                let timeDisplay = `<div class="text-blue-600 font-medium">起: ${m.meeting_time.replace('T', ' ')}</div>`;
                 if (m.meeting_end_time && m.meeting_end_time.trim() !== "") {
-                    timeDisplay += `<div class="text-red-500 ${isFutureOrToday ? 'font-bold' : 'font-medium'}">止: ${m.meeting_end_time.replace('T', ' ')}</div>`;
+                    timeDisplay += `<div class="text-red-500 font-medium">止: ${m.meeting_end_time.replace('T', ' ')}</div>`;
                 }
 
                 let statusColor = m.status.includes('镇街') ? 'text-red-600 font-bold' : (m.status.includes('区市') ? 'text-blue-600 font-bold' : 'text-gray-500');
@@ -176,17 +177,17 @@
                 
                 tbody.innerHTML += `
                     <tr class="hover:bg-pink-100/50 transition-colors ${rowHighlightClass}">
-                        <td class="text-center text-sm nowrap-column ${fontWeightClass}">${index + 1}</td>
-                        <td class="text-center text-sm nowrap-column ${fontWeightClass}">${m.title}</td>
-                        <td class="text-left whitespace-nowrap text-sm px-4 ${fontWeightClass}">${timeDisplay}</td>
-                        <td class="text-center text-sm nowrap-column ${fontWeightClass}">${m.location}</td>
+                        <td class="text-center text-sm nowrap-column font-normal ${textColorClass}">${index + 1}</td>
+                        <td class="text-center text-sm nowrap-column ${isFutureOrToday ? 'font-bold text-gray-800' : 'font-normal text-gray-400'}">${m.title}</td>
+                        <td class="text-left whitespace-nowrap text-sm px-4 font-normal">${timeDisplay}</td>
+                        <td class="text-center text-sm nowrap-column font-normal ${textColorClass}">${m.location}</td>
                         <td class="text-center nowrap-column">
                             <span class="px-3 py-1 rounded-full text-xs font-bold border ${typeStyle}">${m.meeting_type}</span>
                         </td>
-                        <td class="text-center text-sm nowrap-column ${fontWeightClass}">${m.department || '-'}</td>
-                        <td class="text-center">${createLeaderTags(m.leader)}</td>
-                        <td class="text-center nowrap-column text-sm ${statusColor} ${isFutureOrToday ? 'font-black' : ''}">${m.status}</td>
-                        <td class="notes-column text-sm leading-relaxed ${fontWeightClass}">${m.notes || '-'}</td>
+                        <td class="text-center text-sm nowrap-column font-normal ${textColorClass}">${m.department || '-'}</td>
+                        <td class="text-center font-normal">${createLeaderTags(m.leader)}</td>
+                        <td class="text-center nowrap-column text-sm font-normal ${statusColor}">${m.status}</td>
+                        <td class="notes-column text-sm leading-relaxed font-normal ${textColorClass}">${m.notes || '-'}</td>
                         <td class="text-center whitespace-nowrap no-export">
                             <button onclick="editMeeting(${m.id})" class="text-blue-500 hover:text-blue-700 font-bold mr-3 underline text-sm">修改</button>
                             <button onclick="deleteMeeting(${m.id})" class="text-red-400 hover:text-red-600 font-bold underline text-sm">删除</button>
