@@ -158,35 +158,21 @@
                 '突发事件': 'bg-red-50 text-red-700 border-red-200'
             };
 
-            // --- 核心修改：置顶排序逻辑 ---
-            meetingDataList.sort((a, b) => {
-                const endA = a.meeting_end_time ? new Date(a.meeting_end_time) : new Date(a.meeting_time);
-                const endB = b.meeting_end_time ? new Date(b.meeting_end_time) : new Date(b.meeting_time);
-                const isAActive = endA >= today;
-                const isBActive = endB >= today;
-
-                if (isAActive && !isBActive) return -1;
-                if (!isAActive && isBActive) return 1;
-                return new Date(a.meeting_time) - new Date(b.meeting_time);
-            });
-
             meetingDataList.forEach((m, index) => {
-                const startTime = new Date(m.meeting_time);
-                // 判定是否高亮改用结束时间
-                const endTime = m.meeting_end_time ? new Date(m.meeting_end_time) : startTime;
-                const isFutureOrToday = endTime >= today;
+                const meetingDate = new Date(m.meeting_time);
+                const isFutureOrToday = meetingDate >= today;
                 
+                // 核心修改：定义文字颜色类名，不再统一控制粗细
                 const textColorClass = isFutureOrToday ? 'text-gray-800' : 'text-gray-400';
                 const rowHighlightClass = isFutureOrToday ? 'bg-pink-50 border-l-4 border-l-pink-400' : 'opacity-60 bg-white';
                 
-                // 时间列去除加粗
-                let timeDisplay = `<div class="text-blue-600 font-normal">起: ${m.meeting_time.replace('T', ' ')}</div>`;
+                // 时间显示：改为 font-medium (不使用加粗)
+                let timeDisplay = `<div class="text-blue-600 font-medium">起: ${m.meeting_time.replace('T', ' ')}</div>`;
                 if (m.meeting_end_time && m.meeting_end_time.trim() !== "") {
-                    timeDisplay += `<div class="text-red-500 font-normal">止: ${m.meeting_end_time.replace('T', ' ')}</div>`;
+                    timeDisplay += `<div class="text-red-500 font-medium">止: ${m.meeting_end_time.replace('T', ' ')}</div>`;
                 }
 
-                // 参会范围去除加粗
-                let statusColor = m.status.includes('镇街') ? 'text-red-600' : (m.status.includes('区市') ? 'text-blue-600' : 'text-gray-500');
+                let statusColor = m.status.includes('镇街') ? 'text-red-600 font-bold' : (m.status.includes('区市') ? 'text-blue-600 font-bold' : 'text-gray-500');
                 const typeStyle = typeColorMap[m.meeting_type] || 'bg-gray-50 text-gray-700 border-gray-200';
                 
                 tbody.innerHTML += `
@@ -196,15 +182,15 @@
                         <td class="text-left whitespace-nowrap text-sm px-4 font-normal">${timeDisplay}</td>
                         <td class="text-center text-sm nowrap-column font-normal ${textColorClass}">${m.location}</td>
                         <td class="text-center nowrap-column">
-                            <span class="px-3 py-1 rounded-full text-xs font-normal border ${typeStyle}">${m.meeting_type}</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold border ${typeStyle}">${m.meeting_type}</span>
                         </td>
                         <td class="text-center text-sm nowrap-column font-normal ${textColorClass}">${m.department || '-'}</td>
                         <td class="text-center font-normal">${createLeaderTags(m.leader)}</td>
                         <td class="text-center nowrap-column text-sm font-normal ${statusColor}">${m.status}</td>
                         <td class="notes-column text-sm leading-relaxed font-normal ${textColorClass}">${m.notes || '-'}</td>
                         <td class="text-center whitespace-nowrap no-export">
-                            <button onclick="editMeeting(${m.id})" class="text-blue-500 hover:text-blue-700 font-normal mr-3 underline text-sm">修改</button>
-                            <button onclick="deleteMeeting(${m.id})" class="text-red-400 hover:text-red-600 font-normal underline text-sm">删除</button>
+                            <button onclick="editMeeting(${m.id})" class="text-blue-500 hover:text-blue-700 font-bold mr-3 underline text-sm">修改</button>
+                            <button onclick="deleteMeeting(${m.id})" class="text-red-400 hover:text-red-600 font-bold underline text-sm">删除</button>
                         </td>
                     </tr>`;
             });
@@ -213,7 +199,7 @@
         function createLeaderTags(str) {
             if (!str || str === '-') return '-';
             return str.split(/[、,，\s]+/).filter(n => n.trim() !== '').map(name => 
-                `<span class="inline-block bg-blue-50 text-black border border-blue-100 px-2 py-0.5 rounded-lg mr-1 mb-1 text-sm whitespace-nowrap font-normal">${name}</span>`
+                `<span class="inline-block bg-blue-50 text-black border border-blue-100 px-2 py-0.5 rounded-lg mr-1 mb-1 text-sm whitespace-nowrap">${name}</span>`
             ).join('');
         }
 
