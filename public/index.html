@@ -158,7 +158,6 @@
                 '突发事件': 'bg-red-50 text-red-700 border-red-200'
             };
 
-            // --- 核心修改：结束时间降序置顶逻辑 ---
             meetingDataList.sort((a, b) => {
                 const endA = a.meeting_end_time ? new Date(a.meeting_end_time) : new Date(a.meeting_time);
                 const endB = b.meeting_end_time ? new Date(b.meeting_end_time) : new Date(b.meeting_time);
@@ -166,11 +165,9 @@
                 const isAActive = endA >= today;
                 const isBActive = endB >= today;
 
-                // 1. 优先确保活跃会议（粉色区域）在顶部
                 if (isAActive && !isBActive) return -1;
                 if (!isAActive && isBActive) return 1;
                 
-                // 2. 在同一区域内，按照【结束时间】进行降序排序（最晚的在上面）
                 return endB - endA;
             });
 
@@ -289,13 +286,37 @@
             document.getElementById('formTitle').innerText = '➕ 新增会议任务';
         }
 
+        // --- 核心修改：带密码验证的删除功能 ---
         async function deleteMeeting(id) {
-            if (!confirm("确认删除？")) return;
-            await fetch(`/api/meetings?id=${id}`, {
-                method: 'DELETE',
-                headers: { 'X-Web-Password': authToken }
-            });
-            loadMeetings();
+            if (!confirm("确认删除？该操作不可恢复。")) return;
+
+            const adminPass = prompt("请输入管理员删除密码：");
+            if (adminPass === null) return; // 取消
+            if (adminPass.trim() === "") {
+                alert("密码不能为空！");
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/meetings?id=${id}`, {
+                    method: 'DELETE',
+                    headers: { 
+                        'X-Web-Password': authToken,
+                        'X-Admin-Password': adminPass 
+                    }
+                });
+
+                if (res.ok) {
+                    alert("✅ 删除成功");
+                    loadMeetings();
+                } else {
+                    const result = await res.json();
+                    alert("❌ 删除失败：" + (result.error || "授权失败"));
+                }
+            } catch (e) {
+                console.error(e);
+                alert("请求出错，请重试");
+            }
         }
 
         function exportToExcel() {
