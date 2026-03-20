@@ -217,7 +217,7 @@
                     const existStart = new Date(exist.meeting_time).getTime();
                     const existEnd = exist.meeting_end_time ? new Date(exist.meeting_end_time).getTime() : existStart + 60000;
                     if (newStart < existEnd && newEnd > existStart) {
-                        alert(`⚠️ 冲突！${newData.location}在该时段已有会议：\n「${exist.title}」`);
+                        alert(`⚠️ 会议冲突！${newData.location}在该时段已有会议：\n「${exist.title}」`);
                         return true;
                     }
                 }
