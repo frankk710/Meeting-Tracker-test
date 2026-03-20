@@ -37,7 +37,7 @@
             <div class="flex justify-between items-end mb-8">
                 <div>
                     <h1 class="text-3xl font-black text-blue-600">🗓️ 会议保障排期表</h1>
-                    <p class="text-gray-400 text-sm mt-1">系统已就绪，粉色高亮显示今日及后续会议</p>
+                    <p class="text-gray-400 text-sm mt-1">系统已就绪，结束时间最晚的会议将自动排在首位</p>
                 </div>
                 <div class="flex items-center gap-5">
                     <button onclick="exportToExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl font-bold shadow-md flex items-center gap-2 transition-all">导出表格</button>
@@ -158,34 +158,35 @@
                 '突发事件': 'bg-red-50 text-red-700 border-red-200'
             };
 
-            // --- 核心修改：置顶排序逻辑 ---
+            // --- 核心修改：结束时间降序置顶逻辑 ---
             meetingDataList.sort((a, b) => {
                 const endA = a.meeting_end_time ? new Date(a.meeting_end_time) : new Date(a.meeting_time);
                 const endB = b.meeting_end_time ? new Date(b.meeting_end_time) : new Date(b.meeting_time);
+                
                 const isAActive = endA >= today;
                 const isBActive = endB >= today;
 
+                // 1. 优先确保活跃会议（粉色区域）在顶部
                 if (isAActive && !isBActive) return -1;
                 if (!isAActive && isBActive) return 1;
-                return new Date(a.meeting_time) - new Date(b.meeting_time);
+                
+                // 2. 在同一区域内，按照【结束时间】进行降序排序（最晚的在上面）
+                return endB - endA;
             });
 
             meetingDataList.forEach((m, index) => {
                 const startTime = new Date(m.meeting_time);
-                // 判定是否高亮改用结束时间
                 const endTime = m.meeting_end_time ? new Date(m.meeting_end_time) : startTime;
                 const isFutureOrToday = endTime >= today;
                 
                 const textColorClass = isFutureOrToday ? 'text-gray-800' : 'text-gray-400';
                 const rowHighlightClass = isFutureOrToday ? 'bg-pink-50 border-l-4 border-l-pink-400' : 'opacity-60 bg-white';
                 
-                // 时间列去除加粗
                 let timeDisplay = `<div class="text-blue-600 font-normal">起: ${m.meeting_time.replace('T', ' ')}</div>`;
                 if (m.meeting_end_time && m.meeting_end_time.trim() !== "") {
                     timeDisplay += `<div class="text-red-500 font-normal">止: ${m.meeting_end_time.replace('T', ' ')}</div>`;
                 }
 
-                // 参会范围去除加粗
                 let statusColor = m.status.includes('镇街') ? 'text-red-600' : (m.status.includes('区市') ? 'text-blue-600' : 'text-gray-500');
                 const typeStyle = typeColorMap[m.meeting_type] || 'bg-gray-50 text-gray-700 border-gray-200';
                 
