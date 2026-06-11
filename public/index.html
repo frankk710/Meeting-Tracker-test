@@ -220,7 +220,7 @@ async function doLogin() {
     errEl.classList.add('hidden');
 
     try {
-        const res  = await fetch('/api/meetings/login', {
+        const res  = await fetch('/api/meetings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
