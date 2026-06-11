@@ -1,81 +1,126 @@
-// 通用权限检查函数
-async function checkAuth(request, env) {
-    // 1. 验证全局网页访问密码 (Web Access Password)
-    const webPassword = request.headers.get("X-Web-Password");
-    const serverWebPassword = env.WEB_PASSWORD; // Cloudflare 后台设置的变量
+export async function onRequest(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
+  const method = request.method;
+  const path = url.pathname;
 
-    if (webPassword !== serverWebPassword) {
-        return new Response(JSON.stringify({ error: "未授权访问，请重新登录" }), { 
-            status: 401,
-            headers: { "Content-Type": "application/json" }
-        });
-    }
-    return null; // 验证通过
-}
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+  if (method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
-// 1. 获取所有会议记录 (GET)
-export async function onRequestGet(context) {
-    const authError = await checkAuth(context.request, context.env);
-    if (authError) return authError;
+  const json = (data, status = 200) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
-    const { results } = await context.env.DB.prepare(
-        "SELECT * FROM meetings ORDER BY meeting_time DESC"
-    ).all();
-    return Response.json(results);
-}
+  // 解析当前登录用户（token = base64(username:password)）
+  async function getCurrentUser(req) {
+    const auth = req.headers.get('Authorization') || '';
+    if (!auth.startsWith('Bearer ')) return null;
+    try {
+      const token = atob(auth.slice(7));
+      const colonIdx = token.indexOf(':');
+      if (colonIdx === -1) return null;
+      const username = token.slice(0, colonIdx);
+      const password = token.slice(colonIdx + 1);
+      return await env.DB.prepare(
+        'SELECT * FROM users WHERE username = ? AND password = ?'
+      ).bind(username, password).first();
+    } catch { return null; }
+  }
 
-// 2. 添加新的会议记录 (POST)
-export async function onRequestPost(context) {
-    const authError = await checkAuth(context.request, context.env);
-    if (authError) return authError;
+  // ── 登录（无需 token）──────────────────────────────────────
+  if (path === '/api/meetings/login' && method === 'POST') {
+    const { username, password } = await request.json();
+    if (!username || !password) return json({ error: '请输入用户名和密码' }, 400);
+    const user = await env.DB.prepare(
+      'SELECT id, username, role FROM users WHERE username = ? AND password = ?'
+    ).bind(username, password).first();
+    if (!user) return json({ error: '用户名或密码错误' }, 401);
+    const token = btoa(`${username}:${password}`);
+    return json({ token, username: user.username, role: user.role });
+  }
 
-    const data = await context.request.json();
-    // 已加入 meeting_end_time
-    const { title, meeting_time, meeting_end_time, location, meeting_type, department, leader, status, notes } = data;
-    
-    await context.env.DB.prepare(
-        "INSERT INTO meetings (title, meeting_time, meeting_end_time, location, meeting_type, department, leader, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).bind(title, meeting_time, meeting_end_time, location, meeting_type, department, leader, status, notes).run();
-    
-    return Response.json({ success: true });
-}
+  // ── 以下所有路由需要登录 ───────────────────────────────────
+  const currentUser = await getCurrentUser(request);
+  if (!currentUser) return json({ error: '未登录或登录已过期' }, 401);
+  const isAdmin = currentUser.role === 'admin';
 
-// 3. 修改会议记录 (PUT)
-export async function onRequestPut(context) {
-    const authError = await checkAuth(context.request, context.env);
-    if (authError) return authError;
+  // ── GET /api/meetings ──────────────────────────────────────
+  if (path === '/api/meetings' && method === 'GET') {
+    const viewAll = url.searchParams.get('view') === 'all' && isAdmin;
+    const result = viewAll
+      ? await env.DB.prepare('SELECT * FROM meetings ORDER BY meeting_time ASC').all()
+      : await env.DB.prepare('SELECT * FROM meetings WHERE owner_username = ? ORDER BY meeting_time ASC').bind(currentUser.username).all();
+    return json(result.results);
+  }
 
-    const data = await context.request.json();
-    // 已加入 meeting_end_time
-    const { id, title, meeting_time, meeting_end_time, location, meeting_type, department, leader, status, notes } = data;
-    
-    if (!id) return Response.json({ error: "缺少ID" }, { status: 400 });
+  // ── POST /api/meetings ─────────────────────────────────────
+  if (path === '/api/meetings' && method === 'POST') {
+    const b = await request.json();
+    if (!b.title || !b.meeting_time || !b.location)
+      return json({ error: '标题、时间、地点为必填项' }, 400);
+    const r = await env.DB.prepare(`
+      INSERT INTO meetings (title,meeting_time,meeting_end_time,location,meeting_type,department,leader,status,notes,owner_username)
+      VALUES (?,?,?,?,?,?,?,?,?,?)
+    `).bind(b.title, b.meeting_time, b.meeting_end_time||null, b.location,
+       b.meeting_type||'本地会', b.department||null, b.leader||null,
+       b.status||'市级', b.notes||null, currentUser.username).run();
+    return json({ id: r.meta.last_row_id, message: '创建成功' });
+  }
 
-    await context.env.DB.prepare(
-        "UPDATE meetings SET title=?, meeting_time=?, meeting_end_time=?, location=?, meeting_type=?, department=?, leader=?, status=?, notes=? WHERE id=?"
-    ).bind(title, meeting_time, meeting_end_time, location, meeting_type, department, leader, status, notes, id).run();
-    
-    return Response.json({ success: true });
-}
+  // ── PUT /api/meetings/:id ──────────────────────────────────
+  const idMatch = path.match(/^\/api\/meetings\/(\d+)$/);
+  if (idMatch && method === 'PUT') {
+    const id = idMatch[1];
+    const meeting = await env.DB.prepare('SELECT * FROM meetings WHERE id=?').bind(id).first();
+    if (!meeting) return json({ error: '会议不存在' }, 404);
+    if (!isAdmin && meeting.owner_username !== currentUser.username)
+      return json({ error: '无权修改他人的会议' }, 403);
+    const b = await request.json();
+    await env.DB.prepare(`
+      UPDATE meetings SET title=?,meeting_time=?,meeting_end_time=?,location=?,meeting_type=?,department=?,leader=?,status=?,notes=? WHERE id=?
+    `).bind(b.title, b.meeting_time, b.meeting_end_time||null, b.location,
+       b.meeting_type, b.department||null, b.leader||null, b.status, b.notes||null, id).run();
+    return json({ message: '修改成功' });
+  }
 
-// 4. 删除会议记录 (DELETE)
-export async function onRequestDelete(context) {
-    const authError = await checkAuth(context.request, context.env);
-    if (authError) return authError;
+  // ── DELETE /api/meetings/:id ───────────────────────────────
+  if (idMatch && method === 'DELETE') {
+    const id = idMatch[1];
+    const meeting = await env.DB.prepare('SELECT * FROM meetings WHERE id=?').bind(id).first();
+    if (!meeting) return json({ error: '会议不存在' }, 404);
+    if (!isAdmin && meeting.owner_username !== currentUser.username)
+      return json({ error: '无权删除他人的会议' }, 403);
+    await env.DB.prepare('DELETE FROM meetings WHERE id=?').bind(id).run();
+    return json({ message: '删除成功' });
+  }
 
-    const clientAdminPassword = context.request.headers.get("X-Admin-Password");
-    const serverAdminPassword = context.env.ADMIN_PASSWORD || "123456";
+  // ── 用户管理（管理员专用）─────────────────────────────────
+  if (path === '/api/meetings/users' && method === 'GET' && isAdmin) {
+    const r = await env.DB.prepare('SELECT id,username,role,created_at FROM users ORDER BY id').all();
+    return json(r.results);
+  }
 
-    if (clientAdminPassword !== serverAdminPassword) {
-        return Response.json({ error: "管理员密码错误，无权删除！" }, { status: 403 });
-    }
+  if (path === '/api/meetings/users' && method === 'POST' && isAdmin) {
+    const { username, password, role } = await request.json();
+    if (!username || !password) return json({ error: '用户名和密码必填' }, 400);
+    try {
+      await env.DB.prepare('INSERT INTO users (username,password,role) VALUES (?,?,?)')
+        .bind(username, password, role||'user').run();
+      return json({ message: '用户创建成功' });
+    } catch { return json({ error: '用户名已存在' }, 409); }
+  }
 
-    const url = new URL(context.request.url);
-    const id = url.searchParams.get("id");
+  const userIdMatch = path.match(/^\/api\/meetings\/users\/(\d+)$/);
+  if (userIdMatch && method === 'DELETE' && isAdmin) {
+    await env.DB.prepare('DELETE FROM users WHERE id=?').bind(userIdMatch[1]).run();
+    return json({ message: '用户已删除' });
+  }
 
-    if (!id) return Response.json({ error: "缺少ID" }, { status: 400 });
-
-    await context.env.DB.prepare("DELETE FROM meetings WHERE id=?").bind(id).run();
-    
-    return Response.json({ success: true });
+  return json({ error: '接口不存在' }, 404);
 }
