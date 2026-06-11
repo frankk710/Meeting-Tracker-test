@@ -6,4 +6,4 @@ compatibility_date = "2024-05-01"
 binding = "DB" # 代码中调用数据库的名称
 database_name = "meeting-db" # 数据库名称
 
-database_id = "f270a902-c6b8-49d3-b3f8-675ecae9cc9e" # 这里留空，一会儿填
+database_id = "dfd1a96e-14c8-47e7-aedf-9fb2f2d4fd6d" # 这里留空，一会儿填
